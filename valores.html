@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Valores — Bodegar Fácil | Arriendo de bodegas en Temuco</title>
+<meta name="description" content="Valores de arriendo de bodegas en Temuco: desde módulos de 18 m³ hasta bodegas de 2.000 m³. Precios mensuales y diarios transparentes, con IVA incluido." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+  :root{
+    --naranja:#EC6608; --naranja-d:#d25a05; --azul:#1B5FA8; --azul-d:#154b85;
+    --tinta:#181a1d; --gris:#5c6169; --linea:#e9e9e6; --hueso:#f7f7f5; --blanco:#fff;
+    --sans:'Plus Jakarta Sans',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif; --mono:'IBM Plex Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--body);background:var(--blanco);color:var(--tinta);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{width:min(1200px,92%);margin-inline:auto}
+  h1,h2,h3{font-family:var(--sans);line-height:1.08;letter-spacing:-.02em;font-weight:800}
+  a{color:inherit}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--naranja);display:inline-flex;align-items:center;gap:.6rem}
+  .eyebrow::before{content:"";width:24px;height:2px;background:var(--naranja)}
+  .btn{display:inline-flex;align-items:center;gap:.55rem;font-family:var(--sans);font-weight:700;font-size:.95rem;padding:.9rem 1.5rem;border-radius:12px;border:none;cursor:pointer;text-decoration:none;transition:transform .4s cubic-bezier(.32,.72,0,1),background .3s,box-shadow .3s}
+  .btn-primary{background:var(--naranja);color:#fff;box-shadow:0 10px 24px -12px rgba(236,102,8,.7)}
+  .btn-primary:hover{background:var(--naranja-d);transform:translateY(-2px)}
+  .btn-dark{background:var(--tinta);color:#fff}
+  .btn-dark:hover{transform:translateY(-2px)}
+
+  /* NAV (sólida en esta página) */
+  header.nav{position:fixed;inset:0 0 auto 0;z-index:1000;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);box-shadow:0 1px 0 var(--linea);padding:.75rem 0}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between}
+  .brand{font-family:var(--sans);font-weight:800;font-size:1.35rem;letter-spacing:-.02em;color:var(--tinta);text-decoration:none}
+  .brand b{color:var(--naranja)}
+  .nav-links{display:flex;gap:2rem}
+  .nav-links a{font-size:.92rem;color:var(--tinta);opacity:.7;text-decoration:none;transition:opacity .3s}
+  .nav-links a:hover,.nav-links a.act{opacity:1}
+  .nav-links a.act{color:var(--naranja);font-weight:600}
+  @media(max-width:880px){.nav-links{display:none}}
+
+  /* Cabecera de página */
+  .pagehead{padding:9.5rem 0 3.5rem;background:var(--hueso)}
+  .pagehead h1{font-size:clamp(2.4rem,5.5vw,4rem);max-width:20ch}
+  .pagehead p{margin-top:1.2rem;color:var(--gris);font-size:1.08rem;max-width:60ch}
+  .pagehead .mini{display:flex;gap:1.6rem;margin-top:1.8rem;flex-wrap:wrap;font-size:.88rem;color:var(--gris)}
+  .pagehead .mini span{display:inline-flex;align-items:center;gap:.45rem}
+  .pagehead .mini svg{color:var(--naranja)}
+
+  /* Filtro rápido */
+  .filtros{position:sticky;top:64px;z-index:900;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--linea);padding:.9rem 0}
+  .filtros .fx{display:flex;gap:.6rem;flex-wrap:wrap}
+  .chip{font-family:var(--sans);font-weight:600;font-size:.85rem;padding:.5rem 1rem;border-radius:999px;border:1.5px solid var(--linea);background:#fff;cursor:pointer;transition:all .3s}
+  .chip:hover{border-color:var(--tinta)}
+  .chip.on{background:var(--tinta);color:#fff;border-color:var(--tinta)}
+
+  /* Grid de bodegas */
+  .sec{padding:4.5rem 0 6rem}
+  .bgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem}
+  @media(max-width:1020px){.bgrid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:680px){.bgrid{grid-template-columns:1fr}}
+  .bcard{background:#fff;border:1px solid var(--linea);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;transition:transform .45s cubic-bezier(.32,.72,0,1),box-shadow .45s}
+  .bcard:hover{transform:translateY(-6px);box-shadow:0 28px 56px -30px rgba(24,26,29,.4)}
+  .bcard .ph{position:relative;aspect-ratio:16/9;overflow:hidden;background:var(--hueso)}
+  .bcard .ph img{width:100%;height:100%;object-fit:cover;transition:transform .8s cubic-bezier(.32,.72,0,1)}
+  .bcard:hover .ph img{transform:scale(1.06)}
+  .bcard .m3{position:absolute;top:.9rem;left:.9rem;background:var(--naranja);color:#fff;font-family:var(--sans);font-weight:800;font-size:.95rem;padding:.4rem .85rem;border-radius:999px;box-shadow:0 8px 20px -8px rgba(0,0,0,.4)}
+  .bcard .m3 small{font-weight:600;font-size:.72rem}
+  .bcard .avail{position:absolute;top:.9rem;right:.9rem;display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.92);color:#1f7a44;font-family:var(--sans);font-weight:700;font-size:.72rem;padding:.35rem .7rem .35rem .6rem;border-radius:999px;box-shadow:0 8px 20px -10px rgba(0,0,0,.35)}
+  .bcard .avail .d{width:6px;height:6px;border-radius:50%;background:#2e9e5b;box-shadow:0 0 0 3px rgba(46,158,91,.22)}
+  .bcard .bd{padding:1.5rem;display:flex;flex-direction:column;flex:1}
+  .bcard h3{font-size:1.25rem}
+  .bcard .dim{font-family:var(--mono);font-size:.78rem;color:var(--gris);margin-top:.35rem}
+  .bcard .stock{display:flex;align-items:center;gap:.5rem;font-family:var(--mono);font-size:.76rem;color:var(--gris);margin-top:.55rem}
+  .bcard .stock .sd{width:7px;height:7px;border-radius:50%;flex:none}
+  .bcard .stock .sd.ok{background:#2e9e5b;box-shadow:0 0 0 3px rgba(46,158,91,.18)}
+  .bcard .stock .sd.low{background:var(--naranja);box-shadow:0 0 0 3px rgba(236,102,8,.18)}
+  .bcard .stock .sd.out{background:var(--gris);box-shadow:0 0 0 3px rgba(92,97,105,.18)}
+  .bcard .stock b{color:var(--tinta);font-weight:700}
+  .bcard .extra{font-size:.85rem;color:var(--azul);margin-top:.5rem;min-height:1.2em}
+  .bcard .precios{margin-top:1.2rem;padding-top:1.2rem;border-top:1px dashed var(--linea)}
+  .bcard .pm{display:flex;align-items:baseline;gap:.5rem}
+  .bcard .pm .v{font-family:var(--sans);font-weight:800;font-size:1.85rem;letter-spacing:-.03em;color:var(--tinta)}
+  .bcard .pm .per{font-size:.85rem;color:var(--gris)}
+  .bcard .pd{font-size:.85rem;color:var(--gris);margin-top:.25rem}
+  .bcard .pd b{color:var(--azul)}
+  .bcard .neto{font-family:var(--mono);font-size:.7rem;color:var(--gris);opacity:.8;margin-top:.4rem}
+  .bcard .cta{margin-top:1.3rem}
+  .bcard .cta a{display:flex;justify-content:center;width:100%}
+
+  /* Nota IVA */
+  .nota{background:var(--hueso);border:1px solid var(--linea);border-radius:14px;padding:1rem 1.3rem;font-size:.88rem;color:var(--gris);margin-bottom:2.2rem;display:flex;gap:.7rem;align-items:flex-start}
+  .nota svg{flex:none;color:var(--naranja);margin-top:.1rem}
+
+  /* Grúa */
+  .grua{background:var(--tinta);color:#fff;border-radius:24px;padding:clamp(1.8rem,4vw,3rem)}
+  .grua h2{font-size:clamp(1.7rem,3.6vw,2.4rem)}
+  .grua .gg{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1.8rem}
+  @media(max-width:880px){.grua .gg{grid-template-columns:1fr}}
+  .gcard{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:1.5rem}
+  .gcard .tt{font-family:var(--sans);font-weight:700}
+  .gcard .th{font-family:var(--mono);font-size:.72rem;color:rgba(255,255,255,.6);display:block;margin-top:.3rem}
+  .gcard .tp{font-family:var(--sans);font-weight:800;font-size:2rem;color:var(--naranja);margin-top:.9rem;letter-spacing:-.02em}
+  .gcard .tp small{font-size:.9rem;color:rgba(255,255,255,.7);font-weight:600}
+  .gcard .tn{font-size:.8rem;color:rgba(255,255,255,.6);margin-top:.2rem}
+  .grua .aviso{font-size:.8rem;color:rgba(255,255,255,.55);margin-top:1.4rem}
+
+  /* CTA final */
+  .ctafin{text-align:center;padding:4.5rem 0 6rem}
+  .ctafin h2{font-size:clamp(1.9rem,4.2vw,2.9rem)}
+  .ctafin p{color:var(--gris);margin:.9rem auto 1.8rem;max-width:46ch}
+
+  footer{background:var(--tinta);color:#fff;padding:3rem 0 1.8rem}
+  .foot-bot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;font-size:.8rem;color:rgba(255,255,255,.5);font-family:var(--mono)}
+  .foot-bot a{color:rgba(255,255,255,.7)}
+
+  .reveal{opacity:0;transform:translateY(26px)}
+  .wa{position:fixed;bottom:18px;left:18px;z-index:9998;background:#25D366;color:#fff;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;box-shadow:0 12px 28px -8px rgba(37,211,102,.6);transition:transform .3s}
+  .wa:hover{transform:scale(1.08)}
+  .proto{position:fixed;bottom:14px;right:14px;z-index:9998;background:var(--tinta);color:#fff;font-family:var(--mono);font-size:.66rem;letter-spacing:.05em;padding:.45rem .8rem;border-radius:999px;opacity:.85}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html"><b>Bodegar</b> Fácil</a>
+    <nav class="nav-links">
+      <a href="index.html#servicios">Servicios</a>
+      <a href="index.html#ventajas">Por qué nosotros</a>
+      <a href="valores.html" class="act">Valores</a>
+      <a href="index.html#galeria">Bodegas</a>
+      <a href="index.html#ubicacion">Ubicación</a>
+    </nav>
+    <a href="https://wa.me/56968351210" class="btn btn-primary">Cotizar bodega</a>
+  </div>
+</header>
+
+<section class="pagehead">
+  <div class="wrap">
+    <span class="eyebrow">Valores</span>
+    <h1>Precios claros, del módulo a la gran bodega.</h1>
+    <p>Nueve tamaños de bodega para hogar y empresa. Todos con acceso biométrico, monitoreo 24/7, grúa horquilla gratis y sin gastos comunes.</p>
+    <div class="mini">
+      <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Arriendo mensual o diario</span>
+      <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Sin mes de garantía</span>
+      <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Sin mínimo de arriendo</span>
+    </div>
+  </div>
+</section>
+
+<div class="filtros">
+  <div class="wrap fx">
+    <button class="chip on" data-f="all">Todas</button>
+    <button class="chip" data-f="modulo">Módulos (18–20 m³)</button>
+    <button class="chip" data-f="mediana">Medianas (33–81 m³)</button>
+    <button class="chip" data-f="grande">Grandes (180–2.000 m³)</button>
+  </div>
+</div>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="nota reveal">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>Los valores destacados incluyen IVA. Entre paréntesis, el valor neto. Precios de referencia publicados por Bodegar Fácil. La disponibilidad mostrada es de ejemplo, se actualizará con el inventario real; confirma siempre por WhatsApp.</span>
+    </div>
+
+    <div class="bgrid">
+
+      <div class="bcard reveal" data-t="modulo">
+        <div class="ph"><img src="assets/valores/modulo-18.jpg" alt="Módulo de 18 m³" loading="lazy"/><span class="m3">18 <small>m³</small></span><span class="avail"><span class="d"></span>Disponible</span></div>
+        <div class="bd">
+          <h3>Módulo 18</h3>
+          <div class="dim">3 × 2,5 × 2,5 mts</div>
+          <div class="stock"><span class="sd ok"></span><b>5</b> disponibles <span>de 12 totales</span></div>
+          <div class="extra"></div>
+          <div class="precios">
+            <div class="pm"><span class="v">$83.300</span><span class="per">/mes</span></div>
+            <div class="pd">Diario: <b>$5.950</b></div>
+            <div class="neto">Neto: $70.000/mes · $5.000/día</div>
+          </div>
+          <div class="cta"><a href="https://wa.me/56968351210?text=Hola!%20Quiero%20cotizar%20el%20M%C3%B3dulo%2018%20m%C2%B3" class="btn btn-dark">Cotizar este módulo</a></div>
+        </div>
+      </div>
+
+      <div class="bcard reveal" data-t="modulo">
+        <div class="ph"><img src="assets/valores/modulo-20.jpg" alt="Módulo de 20 m³" loading="lazy"/><span class="m3">20 <small>m³</small></span><span class="avail"><span class="d"></span>Disponible</span></div>
+        <div class="bd">
+          <h3>Módulo 20</h3>
+          <div class="dim">3 × 2,5 × 2,7 mts</div>
+          <div class="stock"><span class="sd low"></span><b>1</b> disponible <span>de 10 totales</span></div>
+          <div class="extra"></div>
+          <div class="precios">
+            <div class="pm"><span class="v">$83.300</span><span class="per">/mes</span></div>
+            <div class="pd">Diario: <b>$6.545</b></div>
+            <div class="neto">Neto: $70.000/mes · $5.500/día</div>
+          </div>
+          <div class="cta"><a href="https://wa.me/56968351210?text=Hola!%20Quiero%20cotizar%20el%20M%C3%B3dulo%2020%20m%C2%B3" class="btn btn-dark">Cotizar este módulo</a></div>
+        </div>
+      </div>
+
+      <div class="bcard reveal" data-t="mediana">
+        <div class="ph"><img src="assets/valores/bodega-33.jpg" alt="Bodega de 33 m³" loading="lazy"/><span class="m3">33 <small>m³</small></span><span class="avail"><span class="d"></span>Disponible</span></div>
+        <div class="bd">
+          <h3>Bodega 33</h3>
+          <div class="dim">6 × 2,5 × 2,5 mts</div>
+          <div class="stock"><span class="sd ok"></span><b>3</b> disponibles <span>de 8 totales</span></div>
+          <div class="extra"></div>
+          <div class="precios">
+            <div class="pm"><span class="v">$172.550</span><span class="per">/mes</span></div>
+            <div class="pd">Diario: <b>$8.925</b></div>
+            <div class="neto">Neto: $145.000/mes · $7.500/día</div>
+          </div>
+          <div class="cta"><a href="https://wa.me/56968351210?text=Hola!%20Quiero%20cotizar%20la%20Bodega%2033%20m%C2%B3" class="btn btn-dark">Cotizar esta bodega</a></div>
+        </div>
+      </div>
+
+      <div class="bcard reveal" data-t="mediana">
+        <div class="ph"><img src="assets/valores/bodega-40.jpg" alt="Bodega de 40 m³" loading="lazy"/><span class="m3">40 <small>m³</small></span><span class="avail"><span class="d"></span>Disponible</span></div>
+        <div class="bd">
+          <h3>Bodega 40</h3>
+          <div class="dim">6 × 2,5 × 2,7 mts</div>
+          <div class="stock"><span class="sd ok"></span><b>2</b> disponibles <span>de 6 totales</span></div>
+          <div class="extra"></div>
+          <div class="precios">
+            <div class="pm"><span class="v">$184.550</span><span class="per">/mes</span></div>
+            <div class="pd">Diario: <b>$10.115</b></div>
+            <div class="neto">Neto: $155.000/mes · $8.500/día</div>
+          </div>
+          <div class="cta"><a href="https://wa.me/56968351210?text=Hola!%20Quiero%20cotizar%20la%20Bodega%2040%20m%C2%B3" class="btn btn-dark">Cotizar esta bodega</a></div>
+        </div>
+      </div>
+
+      <div class="bcard reveal" data-t="mediana">
+        <div class="ph"><img src="assets/valores/bodega-81.jpg" alt="Bodega de 81 m³" loading="lazy"/><span class="m3">81 <small>m³</small></span><span class="avail"><span class="d"></span>Disponible</span></div>
+        <div class="bd">
+          <h3>Bodega 81</h3>
+          <div class="dim">12 × 2,5 × 2,7 mts</div>
+          <div class="stock"><span class="sd low"></span><b>1</b> disponible <span>de 5 totales</span></div>
+          <div class="extra"></div>
+          <div class="precios">
+            <div class="pm"><span class="v">$327.500</span><span class="per">/mes</span></div>
+            <div class="pd">Diario: <b>$16.065</b></div>
+            <div class="neto">Neto: $275.000/mes · $13.500/día</div>
+          </div>
+          <div class="cta"><a href="https://wa.me/56968351210?text=Hola!%20Quiero%20cotizar%20la%20Bodega%2081%20m%C2%B3" class="btn btn-dark">Cotizar esta bodega</a></div>
+        </div>
+      </div>
+
+      <div class="bcard reveal" data-t="grande">
+        <div class="ph"><img src="assets/valores/bodega-180.jpg" alt="Bodega de 180 m³" loading="lazy"/><span class="m3">180 <small>m³</small></span></div>
+        <div class="bd">
+          <h3>Bodega 180</h3>
+          <div class="dim">11 × 4 × 4 mts</div>
+          <div class="stock"><span class="sd out"></span><b>Sin disponibilidad</b> <span>de 4 totales</span></div>
+          <div class="extra">Cortina eléctrica de 4 mts de ancho</div>
+          <div class="precios">
+            <div class="pm"><span class="v">$416.500</span><span class="per">/mes</span></div>
+            <div class="pd">Diario: <b>$22.015</b></div>
+            <div class="neto">Neto: $350.000/mes · $18.500/día</div>
+          </div>
+          <div class="cta"><a href="https://wa.me/56968351210?text=Hola!%20Quiero%20cotizar%20la%20Bodega%20180%20m%C2%B3" class="btn btn-dark">Cotizar esta bodega</a></div>
+        </div>
+      </div>
+
+      <div class="bcard reveal" data-t="grande">
+        <div class="ph"><img src="assets/valores/bodega-405.jpg" alt="Bodega de 405 m³" loading="lazy"/><span class="m3">405 <small>m³</small></span><span class="avail"><span class="d"></span>Disponible</span></div>
+        <div class="bd">
+          <h3>Bodega 405</h3>
+          <div class="dim">12 × 7,5 × 4,5 mts</div>
+          <div class="stock"><span class="sd low"></span><b>1</b> disponible <span>de 3 totales</span></div>
+          <div class="extra">Altillo de 25 m² + cortina eléctrica de 6 mts</div>
+          <div class="precios">
+            <div class="pm"><span class="v">$595.000</span><span class="per">/mes</span></div>
+            <div class="pd">Diario: <b>$35.700</b></div>
+            <div class="neto">Neto: $500.000/mes · $30.000/día</div>
+          </div>
+          <div class="cta"><a href="https://wa.me/56968351210?text=Hola!%20Quiero%20cotizar%20la%20Bodega%20405%20m%C2%B3" class="btn btn-dark">Cotizar esta bodega</a></div>
+        </div>
+      </div>
+
+      <div class="bcard reveal" data-t="grande">
+        <div class="ph"><img src="assets/valores/bodega-650.jpg" alt="Bodega de 650 m³" loading="lazy"/><span class="m3">650 <small>m³</small></span><span class="avail"><span class="d"></span>Disponible</span></div>
+        <div class="bd">
+          <h3>Bodega 650</h3>
+          <div class="dim">12 × 11 × 6 mts</div>
+          <div class="stock"><span class="sd low"></span><b>1</b> disponible <span>de 2 totales</span></div>
+          <div class="extra">Cortina eléctrica de 6 mts de ancho</div>
+          <div class="precios">
+            <div class="pm"><span class="v">$1.071.000</span><span class="per">/mes</span></div>
+            <div class="pd">Diario: <b>$51.765</b></div>
+            <div class="neto">Neto: $900.000/mes · $43.500/día</div>
+          </div>
+          <div class="cta"><a href="https://wa.me/56968351210?text=Hola!%20Quiero%20cotizar%20la%20Bodega%20650%20m%C2%B3" class="btn btn-dark">Cotizar esta bodega</a></div>
+        </div>
+      </div>
+
+      <div class="bcard reveal" data-t="grande">
+        <div class="ph"><img src="assets/valores/bodega-2000.jpg" alt="Bodega de 2.000 m³" loading="lazy"/><span class="m3">2.000 <small>m³</small></span><span class="avail"><span class="d"></span>Disponible</span></div>
+        <div class="bd">
+          <h3>Bodega 2.000</h3>
+          <div class="dim">21 × 12 × 8 mts</div>
+          <div class="stock"><span class="sd ok"></span><b>1</b> disponible <span>de 1 total</span></div>
+          <div class="extra">Doble acceso: alto 3,7 mts · ancho 5 mts</div>
+          <div class="precios">
+            <div class="pm"><span class="v">$1.844.500</span><span class="per">/mes</span></div>
+            <div class="pd">Arriendo mensual — cotiza condiciones</div>
+            <div class="neto">Neto: $1.550.000/mes</div>
+          </div>
+          <div class="cta"><a href="https://wa.me/56968351210?text=Hola!%20Quiero%20cotizar%20la%20Bodega%202000%20m%C2%B3" class="btn btn-dark">Cotizar esta bodega</a></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- GRUA -->
+<section class="sec" style="padding-top:0">
+  <div class="wrap">
+    <div class="grua reveal">
+      <span class="eyebrow">Valores de grúa</span>
+      <h2 style="margin-top:.8rem">Arriendo de grúa por hora.</h2>
+      <div class="gg">
+        <div class="gcard"><div class="tt">Diurno</div><span class="th">LUN–VIE · 08:00–20:00</span><div class="tp">$23.800<small> /hora</small></div><div class="tn">$20.000 + IVA · mínimo 4 hrs</div></div>
+        <div class="gcard"><div class="tt">Nocturno</div><span class="th">LUN–VIE · 20:00–01:00</span><div class="tp">$29.750<small> /hora</small></div><div class="tn">$25.000 + IVA · mínimo 4 hrs</div></div>
+        <div class="gcard"><div class="tt">Domingo y festivos</div><span class="th">08:00–20:00</span><div class="tp">$35.700<small> /hora</small></div><div class="tn">$30.000 + IVA · mínimo 4 hrs</div></div>
+      </div>
+      <p class="aviso">* Si la grúa llega a terreno y el cliente desiste del arriendo, se cobra una hora como mínimo. La grúa horquilla para arrendatarios es gratuita.</p>
+    </div>
+  </div>
+</section>
+
+<section class="ctafin">
+  <div class="wrap reveal">
+    <h2>¿No sabes qué tamaño necesitas?</h2>
+    <p>Cuéntanos qué vas a guardar y te recomendamos la bodega justa — sin pagar de más.</p>
+    <a href="https://wa.me/56968351210" class="btn btn-primary">Pedir recomendación por WhatsApp</a>
+  </div>
+</section>
+
+<footer><div class="wrap foot-bot">
+  <span>© 2026 Bodegar Fácil · Temuco, Chile</span>
+  <span><a href="index.html">← Volver al inicio</a></span>
+</div></footer>
+
+<a class="wa" href="https://wa.me/56968351210" aria-label="WhatsApp"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.8 14.13c-.24.68-1.42 1.31-1.95 1.36-.5.05-1.14.07-1.84-.12-.42-.13-.97-.31-1.66-.61-2.92-1.26-4.83-4.2-4.98-4.4-.14-.2-1.19-1.58-1.19-3.01 0-1.43.75-2.13 1.02-2.42.27-.29.58-.36.78-.36.19 0 .39 0 .56.01.18.01.42-.07.66.5.24.59.82 2.02.89 2.17.07.15.12.32.02.51-.09.2-.14.32-.28.49-.14.17-.29.38-.42.51-.14.14-.28.29-.12.57.16.28.72 1.19 1.55 1.93 1.06.95 1.96 1.24 2.24 1.38.28.14.44.12.6-.07.16-.19.69-.8.87-1.08.18-.28.36-.23.61-.14.25.09 1.6.75 1.87.89.27.14.45.21.52.32.07.12.07.68-.17 1.36z"/></svg></a>
+<div class="proto">PROTOTIPO v2 · TAMP</div>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+gsap.utils.toArray('.reveal').forEach(el=>{
+  gsap.to(el,{opacity:1,y:0,duration:.9,ease:'power3.out',scrollTrigger:{trigger:el,start:'top 88%'}});
+});
+/* Filtros */
+document.querySelectorAll('.chip').forEach(ch=>ch.addEventListener('click',()=>{
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  ch.classList.add('on');
+  const f=ch.dataset.f;
+  document.querySelectorAll('.bcard').forEach(card=>{
+    const show = f==='all' || card.dataset.t===f;
+    card.style.display = show ? '' : 'none';
+  });
+  ScrollTrigger.refresh();
+}));
+</script>
+</body>
+</html>

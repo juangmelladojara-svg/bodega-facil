@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bodegar Fácil — Arriendo de bodegas en Temuco</title>
+<meta name="description" content="Arriendo de bodegas en Temuco. Recinto de 16.500 m² con monitoreo 24/7, acceso biométrico, grúa horquilla y traslado gratis. Sin gastos comunes, sin mínimo de arriendo. Camino Temuco–Labranza KM 12." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+  /* Evita el parpadeo de las puertas si ya se mostraron en esta sesión */
+  if (sessionStorage.getItem('doorsSeen') || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.documentElement.classList.add('no-doors');
+  }
+</script>
+<style>
+  :root{
+    --naranja:#EC6608; --naranja-d:#d25a05; --azul:#1B5FA8; --azul-d:#154b85;
+    --tinta:#181a1d; --gris:#5c6169; --linea:#e9e9e6; --hueso:#f7f7f5; --blanco:#fff;
+    --rojo:#cf3a2c;
+    --sans:'Plus Jakarta Sans',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif; --mono:'IBM Plex Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--body);background:var(--blanco);color:var(--tinta);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{width:min(1200px,92%);margin-inline:auto}
+  h1,h2,h3{font-family:var(--sans);line-height:1.08;letter-spacing:-.02em;font-weight:800}
+  a{color:inherit}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--naranja);display:inline-flex;align-items:center;gap:.6rem}
+  .eyebrow::before{content:"";width:24px;height:2px;background:var(--naranja)}
+  .btn{display:inline-flex;align-items:center;gap:.55rem;font-family:var(--sans);font-weight:700;font-size:.95rem;padding:.9rem 1.5rem;border-radius:12px;border:none;cursor:pointer;text-decoration:none;transition:transform .4s cubic-bezier(.32,.72,0,1),background .3s,box-shadow .3s}
+  .btn-primary{background:var(--naranja);color:#fff;box-shadow:0 10px 24px -12px rgba(236,102,8,.7)}
+  .btn-primary:hover{background:var(--naranja-d);transform:translateY(-2px)}
+  .btn-dark{background:var(--tinta);color:#fff}
+  .btn-dark:hover{transform:translateY(-2px)}
+  .btn-ghost{background:transparent;border:1.5px solid var(--linea);color:var(--tinta)}
+  .btn-ghost:hover{border-color:var(--tinta);transform:translateY(-2px)}
+  .btn-white{background:#fff;color:var(--tinta)}
+  .btn-white:hover{transform:translateY(-2px)}
+
+  /* NAV */
+  header.nav{position:fixed;inset:0 0 auto 0;z-index:1000;transition:background .35s,box-shadow .35s,padding .35s;padding:1.1rem 0}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between}
+  .brand{font-family:var(--sans);font-weight:800;font-size:1.35rem;letter-spacing:-.02em;display:flex;align-items:center;gap:.15rem;color:#fff;transition:color .35s}
+  .brand b{color:var(--naranja);font-weight:800}
+  .brand span{opacity:.85}
+  .nav-links{display:flex;gap:2rem}
+  .nav-links a{font-size:.92rem;color:#fff;opacity:.82;text-decoration:none;transition:opacity .3s,color .35s}
+  .nav-links a:hover{opacity:1}
+  header.nav.solid{background:rgba(255,255,255,.92);backdrop-filter:blur(12px);box-shadow:0 1px 0 var(--linea);padding:.75rem 0}
+  header.nav.solid .brand{color:var(--tinta)}
+  header.nav.solid .nav-links a{color:var(--tinta);opacity:.7}
+  @media(max-width:880px){.nav-links{display:none}}
+
+  /* HERO */
+  .hero{position:relative;height:100svh;min-height:600px;display:flex;align-items:flex-end;overflow:hidden}
+  .hero-bg{position:absolute;inset:0;background:url('assets/bodega-3.jpg') center 40%/cover no-repeat;transform:scale(1.08);animation:ken 22s ease-in-out infinite alternate;will-change:transform}
+  @keyframes ken{0%{transform:scale(1.08) translate(0,0)}100%{transform:scale(1.22) translate(-2.5%,-2%)}}
+  .hero-ov{position:absolute;inset:0;background:
+     linear-gradient(90deg,rgba(15,17,20,.82) 0%,rgba(15,17,20,.5) 42%,rgba(15,17,20,.12) 78%,transparent 100%),
+     linear-gradient(0deg,rgba(15,17,20,.7) 0%,transparent 45%)}
+  .hero-inner{position:relative;z-index:2;color:#fff;padding-bottom:clamp(3rem,7vh,6rem)}
+  .hero h1{font-size:clamp(2.5rem,6.2vw,5rem);max-width:16ch}
+  .hero h1 em{font-style:normal;color:var(--naranja)}
+  .hero .lead{margin-top:1.4rem;max-width:46ch;font-size:1.12rem;color:rgba(255,255,255,.85)}
+  .hero-cta{display:flex;gap:.8rem;margin-top:2rem;flex-wrap:wrap}
+  .hero-stats{display:flex;gap:2.6rem;margin-top:3rem;flex-wrap:wrap;padding-top:2rem;border-top:1px solid rgba(255,255,255,.18)}
+  .hs .n{font-family:var(--sans);font-size:2.1rem;font-weight:800;letter-spacing:-.03em}
+  .hs .n small{font-size:1rem;opacity:.8}
+  .hs .l{font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.65);margin-top:.15rem}
+
+  /* MARQUEE trust */
+  .strip{background:var(--naranja);color:#fff;padding:.9rem 0;overflow:hidden;white-space:nowrap}
+  .strip-tr{display:inline-flex;gap:2.6rem;font-family:var(--sans);font-weight:700;font-size:.95rem;will-change:transform}
+  .strip-tr span{display:inline-flex;align-items:center;gap:2.6rem}
+  .strip-tr span::after{content:"●";font-size:.5rem;opacity:.7}
+
+  .sec{padding:6.5rem 0}
+  .sec.alt{background:var(--hueso)}
+  .sec-head{max-width:56ch;margin-bottom:3.2rem}
+  .sec-head h2{font-size:clamp(2rem,4.4vw,3.2rem);margin-top:1rem}
+  .sec-head p{margin-top:1rem;color:var(--gris);font-size:1.06rem}
+
+  /* Servicios grid */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+  .feat{background:#fff;border:1px solid var(--linea);border-radius:16px;padding:1.6rem;transition:transform .45s cubic-bezier(.32,.72,0,1),box-shadow .45s,border-color .45s}
+  .feat:hover{transform:translateY(-5px);box-shadow:0 22px 44px -28px rgba(24,26,29,.35);border-color:transparent}
+  .feat .ic{color:var(--naranja);display:inline-flex;margin-bottom:1.2rem}
+  .feat h3{font-size:1.12rem;margin-bottom:.35rem}
+  .feat p{color:var(--gris);font-size:.94rem}
+
+  /* Ventajas (sin letra chica) */
+  .ventajas{display:grid;grid-template-columns:repeat(4,1fr);gap:1.1rem}
+  @media(max-width:880px){.ventajas{grid-template-columns:repeat(2,1fr)}}
+  .vtag{background:var(--tinta);color:#fff;border-radius:16px;padding:1.7rem 1.4rem}
+  .vtag .big{font-family:var(--sans);font-weight:800;font-size:1.5rem;color:var(--naranja);letter-spacing:-.02em}
+  .vtag p{color:rgba(255,255,255,.72);font-size:.9rem;margin-top:.3rem}
+
+  /* Servicio gratuito split */
+  .split{display:grid;grid-template-columns:1.05fr .95fr;gap:2.6rem;align-items:center}
+  @media(max-width:880px){.split{grid-template-columns:1fr}}
+  .split .ph{border-radius:20px;overflow:hidden;aspect-ratio:4/3;position:relative}
+  .split .ph img{width:100%;height:100%;object-fit:cover;display:block}
+  .freebie{display:flex;gap:1rem;padding:1.2rem 0;border-bottom:1px solid var(--linea)}
+  .freebie .k{flex:none;color:var(--azul);display:inline-flex}
+  .freebie h4{font-family:var(--sans);font-size:1.08rem}
+  .freebie p{color:var(--gris);font-size:.92rem;margin-top:.15rem}
+
+  /* Pasos */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem}
+  @media(max-width:880px){.steps{grid-template-columns:1fr}}
+  .step{padding-top:1.4rem;border-top:3px solid var(--naranja)}
+  .step .num{font-family:var(--mono);font-size:.8rem;color:var(--naranja)}
+  .step h3{font-family:var(--sans);font-size:1.25rem;margin:.7rem 0 .4rem}
+  .step p{color:var(--gris);font-size:.94rem}
+
+  /* Valores (grúa) */
+  .tarifas{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem}
+  @media(max-width:880px){.tarifas{grid-template-columns:1fr}}
+  .tcard{border:1px solid var(--linea);border-radius:18px;padding:1.9rem;background:#fff;position:relative;transition:transform .45s cubic-bezier(.32,.72,0,1),box-shadow .45s,border-color .45s}
+  .tcard:hover{transform:translateY(-5px);box-shadow:0 22px 44px -28px rgba(24,26,29,.35);border-color:transparent}
+  .tcard .tt{font-family:var(--sans);font-weight:800;font-size:1.2rem}
+  .tcard .th{display:block;font-family:var(--mono);font-size:.74rem;letter-spacing:.06em;color:var(--gris);margin-top:.35rem}
+  .tcard .tp{font-family:var(--sans);font-weight:800;font-size:2.5rem;letter-spacing:-.03em;color:var(--naranja);margin:1.2rem 0 .1rem;line-height:1}
+  .tcard .tp small{font-size:1rem;color:var(--gris);font-weight:600}
+  .tcard .tn{font-size:.86rem;color:var(--gris)}
+  .tcard.hl{background:var(--azul);border-color:transparent;color:#fff}
+  .tcard.hl .th,.tcard.hl .tn{color:rgba(255,255,255,.75)}
+  .tcard.hl .tp{color:#fff}
+  .tcard .badge{position:absolute;top:1.2rem;right:1.2rem;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;background:var(--naranja);color:#fff;padding:.25rem .55rem;border-radius:999px}
+
+  /* Galería */
+  .gal{display:grid;grid-template-columns:2fr 1fr 1fr;grid-auto-rows:200px;gap:1rem}
+  .gal a{border-radius:16px;overflow:hidden;position:relative;display:block}
+  .gal a img{width:100%;height:100%;object-fit:cover;transition:transform .8s cubic-bezier(.32,.72,0,1)}
+  .gal a:hover img{transform:scale(1.06)}
+  .gal .g1{grid-row:span 2}
+  @media(max-width:880px){.gal{grid-template-columns:1fr 1fr}.gal .g1{grid-column:span 2;grid-row:auto}}
+
+  /* Ubicación */
+  .ubica{display:grid;grid-template-columns:1.15fr .85fr;gap:1.4rem;align-items:stretch}
+  @media(max-width:880px){.ubica{grid-template-columns:1fr}}
+  .mapc{border-radius:20px;overflow:hidden;min-height:340px;position:relative;background:#dfe3e7;color:#fff;text-decoration:none;display:block}
+  .mapc iframe{width:100%;height:100%;border:0;min-height:340px;filter:saturate(.9)}
+  .info{background:var(--hueso);border-radius:20px;padding:2rem}
+  .row{display:flex;justify-content:space-between;gap:1rem;padding:.95rem 0;border-bottom:1px solid var(--linea);font-size:.95rem}
+  .row:last-of-type{border-bottom:none}
+  .row .v{font-family:var(--mono);color:var(--azul);text-align:right}
+
+  /* FAQ */
+  .faq-item{border-bottom:1px solid var(--linea)}
+  .faq-q{width:100%;background:none;border:none;text-align:left;padding:1.4rem 0;font-family:var(--sans);font-size:1.12rem;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;gap:1rem;color:var(--tinta)}
+  .faq-q .pm{color:var(--naranja);transition:transform .4s;font-size:1.3rem;line-height:1}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height .5s cubic-bezier(.32,.72,0,1);color:var(--gris)}
+  .faq-a p{padding-bottom:1.4rem;max-width:70ch}
+  .faq-item.open .pm{transform:rotate(45deg)}
+
+  /* CTA */
+  .cta{position:relative;border-radius:26px;overflow:hidden;padding:clamp(2.6rem,6vw,5rem);color:#fff;text-align:center}
+  .cta .cbg{position:absolute;inset:0;background:url('assets/bodega-2.jpg') center/cover;transform:scale(1.05)}
+  .cta .cov{position:absolute;inset:0;background:linear-gradient(rgba(20,22,26,.82),rgba(20,22,26,.86))}
+  .cta > *{position:relative;z-index:2}
+  .cta h2{font-size:clamp(2rem,4.6vw,3.2rem)}
+  .cta p{max-width:44ch;margin:1rem auto 2rem;color:rgba(255,255,255,.82)}
+
+  footer{background:var(--tinta);color:#fff;padding:4rem 0 2rem}
+  .foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:2.5rem;padding-bottom:2.5rem;border-bottom:1px solid rgba(255,255,255,.12)}
+  .foot h5{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:.9rem}
+  .foot a{display:block;color:rgba(255,255,255,.75);text-decoration:none;padding:.24rem 0;font-size:.93rem}
+  .foot a:hover{color:var(--naranja)}
+  .foot-bot{padding-top:1.5rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;font-size:.8rem;color:rgba(255,255,255,.5);font-family:var(--mono)}
+
+  .reveal{opacity:0;transform:translateY(26px)}
+  .proto{position:fixed;bottom:14px;right:14px;z-index:9998;background:var(--tinta);color:#fff;font-family:var(--mono);font-size:.66rem;letter-spacing:.05em;padding:.45rem .8rem;border-radius:999px;opacity:.85}
+  .wa{position:fixed;bottom:18px;left:18px;z-index:9998;background:#25D366;color:#fff;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;box-shadow:0 12px 28px -8px rgba(37,211,102,.6);transition:transform .3s}
+  .wa:hover{transform:scale(1.08)}
+
+  /* INTRO: puertas de bodega */
+  html.no-doors #doors{display:none}
+  body.doors-lock{overflow:hidden}
+  #doors{position:fixed;inset:0;z-index:99999;overflow:hidden;pointer-events:none}
+  #doors .door{
+    position:absolute;top:0;bottom:0;width:50%;pointer-events:auto;
+    background:
+      repeating-linear-gradient(90deg,rgba(255,255,255,.045) 0 3px,rgba(0,0,0,.16) 3px 6px,rgba(255,255,255,.02) 6px 9px),
+      linear-gradient(180deg,#2b2d31,var(--tinta) 55%,#0e0e10);
+    box-shadow:inset 0 0 90px rgba(0,0,0,.65);
+  }
+  #doors .door::before{content:"";position:absolute;inset:16px;border:2px solid rgba(255,255,255,.07);border-radius:6px;pointer-events:none}
+  #doors .door-l{left:0}
+  #doors .door-r{right:0}
+  #doors .hazard{position:absolute;left:0;right:0;height:10px;background:repeating-linear-gradient(45deg,var(--naranja) 0 14px,#151517 14px 28px);opacity:.9}
+  #doors .hazard.top{top:0}
+  #doors .hazard.bot{bottom:0}
+  #doors .latch-l,#doors .latch-r{position:absolute;top:calc(50% - 8px);width:50px;height:16px;background:var(--naranja);box-shadow:0 3px 8px rgba(0,0,0,.45);z-index:2}
+  #doors .latch-l{right:0;border-radius:4px 0 0 4px;transform-origin:right center}
+  #doors .latch-r{left:0;border-radius:0 4px 4px 0;transform-origin:left center}
+  #doors .doors-brand{position:absolute;top:41%;left:50%;transform:translate(-50%,-50%);z-index:3;font-family:var(--sans);font-weight:800;font-size:clamp(2.6rem,9vw,6.5rem);letter-spacing:-.03em;color:#fff;white-space:nowrap;pointer-events:none;text-shadow:0 10px 40px rgba(0,0,0,.5)}
+  #doors .doors-brand b{color:var(--naranja)}
+</style>
+</head>
+<body>
+
+<noscript><style>#doors{display:none}</style></noscript>
+<div id="doors" aria-hidden="true">
+  <div class="door door-l">
+    <span class="hazard top"></span>
+    <span class="hazard bot"></span>
+    <span class="latch-l"></span>
+  </div>
+  <div class="door door-r">
+    <span class="hazard top"></span>
+    <span class="hazard bot"></span>
+    <span class="latch-r"></span>
+  </div>
+  <span class="doors-brand"><b>Bodegar</b>&nbsp;Fácil</span>
+</div>
+<script>
+(function(){
+  var doors = document.getElementById('doors');
+  if (!doors) return;
+  if (document.documentElement.classList.contains('no-doors')) {
+    doors.style.display = 'none';
+    return;
+  }
+  document.body.classList.add('doors-lock');
+  gsap.timeline({
+    delay: .3,
+    onComplete: function () {
+      doors.style.display = 'none';
+      document.body.classList.remove('doors-lock');
+      sessionStorage.setItem('doorsSeen', '1');
+    }
+  })
+  .to('.latch-l', { rotate: -20, duration: .3, ease: 'power2.inOut' })
+  .to('.latch-r', { rotate: 20, duration: .3, ease: 'power2.inOut' }, '<')
+  .to('.doors-brand', { opacity: 0, duration: .3 }, '+=.1')
+  .to('.door-l', { xPercent: -100, duration: 1.15, ease: 'power4.inOut' }, '<')
+  .to('.door-r', { xPercent: 100, duration: 1.15, ease: 'power4.inOut' }, '<');
+})();
+</script>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <div class="brand"><b>Bodegar</b>&nbsp;<span>Fácil</span></div>
+    <nav class="nav-links">
+      <a href="#servicios">Servicios</a>
+      <a href="#ventajas">Por qué nosotros</a>
+      <a href="valores.html">Valores</a>
+      <a href="#galeria">Bodegas</a>
+      <a href="#ubicacion">Ubicación</a>
+    </nav>
+    <a href="https://wa.me/56968351210" class="btn btn-primary">Cotizar bodega</a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-ov"></div>
+  <div class="wrap hero-inner">
+    <h1>Tus cosas, guardadas <em>como corresponde.</em></h1>
+    <p class="lead">Arriendo de bodegas en un recinto de 16.500 m² con monitoreo 24/7, acceso biométrico y traslado gratis. Sin gastos comunes ni mínimo de arriendo.</p>
+    <div class="hero-cta">
+      <a href="https://wa.me/56968351210" class="btn btn-primary">Cotiza tu bodega
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <a href="#servicios" class="btn btn-white">Ver servicios</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hs"><div class="n" data-count="16500">0</div><div class="l">m² de recinto cerrado</div></div>
+      <div class="hs"><div class="n"><span data-count="24">0</span><small>/7</small></div><div class="l">monitoreo con cámaras</div></div>
+      <div class="hs"><div class="n">$<span data-count="0">0</span></div><div class="l">gastos comunes</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="strip">
+  <div class="strip-tr">
+    <span>Sin gastos comunes</span><span>Sin mes de garantía</span><span>Sin mínimo de arriendo</span><span>Grúa horquilla gratis</span><span>Traslado gratis</span><span>Acceso biométrico</span>
+    <span>Sin gastos comunes</span><span>Sin mes de garantía</span><span>Sin mínimo de arriendo</span><span>Grúa horquilla gratis</span><span>Traslado gratis</span><span>Acceso biométrico</span>
+  </div>
+</div>
+
+<!-- SERVICIOS -->
+<section class="sec" id="servicios">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Características y servicios</span>
+      <h2>Un recinto pensado para cuidar lo que guardas.</h2>
+      <p>16.500 m² con cierre perimetral y protección eléctrica. Todo lo que necesitas para almacenar tranquilo, de empresa o de hogar.</p>
+    </div>
+    <div class="grid">
+      <div class="feat reveal"><div class="ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div><h3>Acceso biométrico o tarjeta</h3><p>Entras tú, nadie más. Control de acceso al recinto por huella o tarjeta personal.</p></div>
+      <div class="feat reveal"><div class="ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div><h3>Monitoreo 24/7</h3><p>Cámaras y vigilancia por empresa externa, todos los días. Cierre perimetral con protección eléctrica.</p></div>
+      <div class="feat reveal"><div class="ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><path d="M4 17V7l8-4 8 4v10M4 17l8 4 8-4M4 17l8-4 8 4"/></svg></div><h3>Grúa horquilla gratis</h3><p>Servicio de grúa horquilla sin costo para arrendatarios al cargar y descargar.</p></div>
+      <div class="feat reveal"><div class="ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg></div><h3>Luz, enchufes y trifásica</h3><p>Bodegas habilitadas con luz y enchufes; corriente trifásica disponible para quien la necesite.</p></div>
+      <div class="feat reveal"><div class="ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><path d="M4 4h16v4H4zM6 8v12M18 8v12M6 20h12M9 12h6"/></svg></div><h3>Cortinas automáticas</h3><p>Bodegas con cortinas metálicas automáticas y control remoto. Amplio patio de maniobras.</p></div>
+      <div class="feat reveal"><div class="ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><path d="M5 12.55a11 11 0 0114 0M8.5 16.1a6 6 0 017 0M2 8.82a15 15 0 0120 0M12 20h.01"/></svg></div><h3>Wi-Fi, baños y oficinas</h3><p>Wi-Fi en todo el recinto, baños para arrendatarios y sala de reuniones y oficinas compartidas con agenda.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- VENTAJAS -->
+<section class="sec alt" id="ventajas">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Sin letra chica</span>
+      <h2>Arriendo transparente, sin sorpresas.</h2>
+    </div>
+    <div class="ventajas">
+      <div class="vtag reveal"><div class="big">$0</div><p>Gastos comunes. Pagas tu bodega y nada más.</p></div>
+      <div class="vtag reveal"><div class="big">$0</div><p>Mes de garantía para arrendar.</p></div>
+      <div class="vtag reveal"><div class="big">Sin</div><p>Mínimo de arriendo: corto o largo plazo.</p></div>
+      <div class="vtag reveal"><div class="big">15 días</div><p>De aviso para terminar el arriendo. Así de flexible.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICIO GRATUITO -->
+<section class="sec">
+  <div class="wrap split">
+    <div class="reveal">
+      <span class="eyebrow">Servicio gratuito</span>
+      <h2 style="font-size:clamp(1.9rem,4vw,2.8rem);margin:1rem 0 1.6rem">Te movemos las cosas, sin costo.</h2>
+      <div class="freebie"><div class="k"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div><h4>Carro cerrado de 20 m³ · 3 toneladas</h4><p>Disponible gratis dos veces durante tu arriendo, para llevar tus cosas de tu casa a la bodega (o de vuelta).</p></div></div>
+      <div class="freebie"><div class="k"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><path d="M4 17V7l8-4 8 4v10M12 3v18"/></svg></div><div><h4>Grúa horquilla incluida</h4><p>Para cargar y descargar sin romperte la espalda ni pagar extra.</p></div></div>
+      <div class="freebie"><div class="k"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><path d="M20 6L9 17l-5-5"/></svg></div><div><h4>Recepción de carga</h4><p>Recibimos y almacenamos tu carga en tu bodega (sujeto a disponibilidad horaria).</p></div></div>
+      <a href="https://wa.me/56968351210" class="btn btn-dark" style="margin-top:1.8rem">Coordinar mi traslado</a>
+    </div>
+    <div class="ph reveal"><img src="assets/bodega-1.jpg" alt="Bodegar Fácil — traslado y almacenaje" /></div>
+  </div>
+</section>
+
+<!-- PASOS -->
+<section class="sec alt" id="como">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="eyebrow">Cómo funciona</span><h2>Arrienda en 3 pasos simples.</h2></div>
+    <div class="steps">
+      <div class="step reveal"><div class="num">01</div><h3>Cuéntanos qué guardas</h3><p>Escríbenos por WhatsApp y te recomendamos el tamaño de bodega ideal para ti.</p></div>
+      <div class="step reveal"><div class="num">02</div><h3>Reserva sin garantía</h3><p>Sin mes de garantía ni mínimo de arriendo. Coordinamos tu traslado gratuito.</p></div>
+      <div class="step reveal"><div class="num">03</div><h3>Guarda tranquilo</h3><p>Accede con huella o tarjeta, en un recinto monitoreado 24/7 con grúa horquilla incluida.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- GALERIA -->
+<section class="sec" id="galeria">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="eyebrow">Nuestras bodegas</span><h2>Así se ve Bodegar Fácil.</h2><p>Bodegas de distintos tamaños en Temuco, sobre un recinto cerrado de 16.500 m².</p></div>
+    <div class="gal reveal">
+      <a class="g1" href="assets/bodega-3.jpg" target="_blank"><img src="assets/bodega-3.jpg" alt="Bodegas rojas Bodegar Fácil" /></a>
+      <a href="assets/bodega-2.jpg" target="_blank"><img src="assets/bodega-2.jpg" alt="Pasillos de bodegas" /></a>
+      <a href="assets/bodega-1.jpg" target="_blank"><img src="assets/bodega-1.jpg" alt="Interior y traslado" /></a>
+      <a href="assets/bodega-2.jpg" target="_blank" style="grid-column:span 2"><img src="assets/bodega-2.jpg" alt="Recinto Bodegar Fácil" /></a>
+    </div>
+  </div>
+</section>
+
+<!-- UBICACION -->
+<section class="sec alt" id="ubicacion">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="eyebrow">Dónde estamos</span><h2>A 12 km de Temuco, camino a Labranza.</h2></div>
+    <div class="ubica">
+      <a class="mapc reveal" href="https://maps.google.com/?q=Camino+Temuco+Labranza+KM+12" target="_blank" style="background:linear-gradient(135deg,#22303c,#38566a);display:flex;align-items:flex-end;padding:1.8rem">
+        <span class="mapgrid" style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:40px 40px"></span>
+        <span class="mappin" style="position:absolute;top:46%;left:44%;width:22px;height:22px;background:var(--naranja);border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 0 0 10px rgba(236,102,8,.25)"></span>
+        <span style="position:relative;z-index:2;font-family:var(--mono);font-size:.82rem;letter-spacing:.05em">📍 Camino Temuco–Labranza KM 12 · <u>Abrir en Google Maps</u></span>
+      </a>
+      <div class="info reveal">
+        <div class="row"><span>Dirección</span><span class="v">Camino Temuco–Labranza KM 12</span></div>
+        <div class="row"><span>Acceso a bodegas</span><span class="v">Lun–Vie · 8:30–20:00</span></div>
+        <div class="row"><span>Oficina comercial</span><span class="v">L–V · 9–13:30 / 14:30–19</span></div>
+        <div class="row"><span>WhatsApp / teléfono</span><span class="v">+56 9 6835 1210</span></div>
+        <div class="row"><span>Correo</span><span class="v">info@bodegarfacil.cl</span></div>
+        <a href="https://wa.me/56968351210" class="btn btn-primary" style="margin-top:1.6rem;width:100%;justify-content:center">Escríbenos por WhatsApp</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="sec" id="faq">
+  <div class="wrap" style="max-width:840px">
+    <div class="sec-head reveal"><span class="eyebrow">Preguntas frecuentes</span><h2>Lo que más nos preguntan.</h2></div>
+    <div class="reveal">
+      <div class="faq-item"><button class="faq-q">¿Piden mes de garantía o mínimo de arriendo? <span class="pm">+</span></button><div class="faq-a"><p>No. Arriendas sin mes de garantía, sin gastos comunes y sin mínimo de arriendo. Puedes usar la bodega a corto o largo plazo, y terminar avisando con 15 días de anticipación.</p></div></div>
+      <div class="faq-item"><button class="faq-q">¿Cómo es la seguridad del recinto? <span class="pm">+</span></button><div class="faq-a"><p>El recinto de 16.500 m² tiene cierre perimetral con protección eléctrica, acceso por control biométrico o tarjeta, y monitoreo las 24 horas con cámaras a cargo de una empresa externa.</p></div></div>
+      <div class="faq-item"><button class="faq-q">¿Me ayudan a trasladar mis cosas? <span class="pm">+</span></button><div class="faq-a"><p>Sí. Contamos con un carro cerrado de 20 m³ y 3 toneladas que puedes usar gratis dos veces durante tu arriendo, además de grúa horquilla incluida para cargar y descargar.</p></div></div>
+      <div class="faq-item"><button class="faq-q">¿Qué tamaños y comodidades tienen las bodegas? <span class="pm">+</span></button><div class="faq-a"><p>Hay bodegas de distintos tamaños, habilitadas con luz y enchufes, cortinas metálicas automáticas con control remoto y corriente trifásica si la necesitas. El recinto suma Wi-Fi, baños, amplio patio de maniobras y sala de reuniones y oficinas compartidas.</p></div></div>
+      <div class="faq-item"><button class="faq-q">¿Dónde están ubicados? <span class="pm">+</span></button><div class="faq-a"><p>En Camino Temuco–Labranza KM 12. Acceso a bodegas de lunes a viernes de 8:30 a 20:00 y oficina comercial de 9:00 a 13:30 y 14:30 a 19:00.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="sec" style="padding-top:0"><div class="wrap">
+  <div class="cta reveal">
+    <div class="cbg"></div><div class="cov"></div>
+    <h2>Libera espacio hoy.</h2>
+    <p>Cuéntanos qué necesitas guardar y te cotizamos la bodega ideal en minutos, sin compromiso.</p>
+    <a href="https://wa.me/56968351210" class="btn btn-primary">Cotiza tu bodega ahora
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="foot">
+    <div style="max-width:280px">
+      <div class="brand" style="color:#fff;margin-bottom:1rem"><b>Bodegar</b>&nbsp;<span>Fácil</span></div>
+      <p style="color:rgba(255,255,255,.6);font-size:.9rem">Arriendo de bodegas para tu empresa y hogar en Temuco. Una empresa de Bodegas Nacionales.</p>
+    </div>
+    <div><h5>Sitio</h5><a href="#servicios">Servicios</a><a href="#ventajas">Por qué nosotros</a><a href="valores.html">Valores</a><a href="#galeria">Bodegas</a><a href="#ubicacion">Ubicación</a></div>
+    <div><h5>Contacto</h5><a href="https://wa.me/56968351210">+56 9 6835 1210</a><a href="mailto:info@bodegarfacil.cl">info@bodegarfacil.cl</a><a href="https://maps.google.com/?q=Camino+Temuco+Labranza+KM+12" target="_blank">Camino Temuco–Labranza KM 12</a></div>
+  </div>
+  <div class="foot-bot"><span>© 2026 Bodegar Fácil · Temuco, Chile</span><span>Prototipo hecho por TAMP</span></div>
+</div></footer>
+
+<a class="wa" href="https://wa.me/56968351210" aria-label="WhatsApp"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.8 14.13c-.24.68-1.42 1.31-1.95 1.36-.5.05-1.14.07-1.84-.12-.42-.13-.97-.31-1.66-.61-2.92-1.26-4.83-4.2-4.98-4.4-.14-.2-1.19-1.58-1.19-3.01 0-1.43.75-2.13 1.02-2.42.27-.29.58-.36.78-.36.19 0 .39 0 .56.01.18.01.42-.07.66.5.24.59.82 2.02.89 2.17.07.15.12.32.02.51-.09.2-.14.32-.28.49-.14.17-.29.38-.42.51-.14.14-.28.29-.12.57.16.28.72 1.19 1.55 1.93 1.06.95 1.96 1.24 2.24 1.38.28.14.44.12.6-.07.16-.19.69-.8.87-1.08.18-.28.36-.23.61-.14.25.09 1.6.75 1.87.89.27.14.45.21.52.32.07.12.07.68-.17 1.36z"/></svg></a>
+<div class="proto">PROTOTIPO v2 · TAMP</div>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+gsap.utils.toArray('.reveal').forEach(el=>{
+  gsap.to(el,{opacity:1,y:0,duration:1,ease:'power3.out',scrollTrigger:{trigger:el,start:'top 86%'}});
+});
+const heroTl=gsap.timeline({defaults:{ease:'power3.out'},delay:.15});
+heroTl.from('.hero h1',{y:40,opacity:0,duration:1})
+ .from('.hero .lead',{y:24,opacity:0,duration:.8},'-=.65')
+ .from('.hero-cta',{y:24,opacity:0,duration:.8},'-=.6')
+ .from('.hero-stats .hs',{y:24,opacity:0,stagger:.12,duration:.7},'-=.5');
+gsap.utils.toArray('[data-count]').forEach(el=>{
+  const end=+el.dataset.count;
+  gsap.to({v:0},{v:end,duration:2,ease:'power2.out',scrollTrigger:{trigger:el,start:'top 95%'},
+    onUpdate:function(){el.textContent=Math.round(this.targets()[0].v).toLocaleString('es-CL')}});
+});
+gsap.to('.strip-tr',{xPercent:-50,duration:20,ease:'none',repeat:-1});
+// Nav solid on scroll
+const nav=document.getElementById('nav');
+const setNav=()=>nav.classList.toggle('solid',window.scrollY>window.innerHeight*0.7);
+setNav(); window.addEventListener('scroll',setNav);
+// Parallax hero overlay text subtle
+gsap.to('.hero-inner',{y:-60,scrollTrigger:{trigger:'.hero',start:'top top',end:'bottom top',scrub:true}});
+// FAQ
+document.querySelectorAll('.faq-q').forEach(q=>q.addEventListener('click',()=>{
+  const it=q.parentElement,a=it.querySelector('.faq-a'),open=it.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i=>{i.classList.remove('open');i.querySelector('.faq-a').style.maxHeight=null});
+  if(!open){it.classList.add('open');a.style.maxHeight=a.scrollHeight+'px'}
+}));
+</script>
+</body>
+</html>
