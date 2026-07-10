@@ -9,6 +9,10 @@ Un solo proyecto Next.js que sirve todo bajo el mismo dominio:
   Plus) vinculado a la habilitación automática de tarjetas RFID en 2 portones
   (controlador Hikvision DS-K2602T vía ISAPI). Ver [`CONTEXTO.md`](./CONTEXTO.md)
   para el detalle completo de arquitectura y flujo de negocio de esta parte.
+- **Panel de administración** (`/admin/*`): para el dueño — gestiona bodegas y
+  arrendatarios, revisa el historial de facturas/pagos (Webpay + manuales), y
+  administra el control de acceso (reintentar sincronización, revocar tarjetas).
+  Protegido con Supabase Auth + allowlist de emails.
 
 La landing y el portal son deliberadamente independientes en estilos (la landing
 usa su propio CSS inline "Organic Tech/industrial"; el portal usa Tailwind v4) —
@@ -36,10 +40,31 @@ un store en memoria.
 Con `TRANSBANK_ENVIRONMENT=integration` (default) los pagos usan las credenciales
 públicas de prueba de Transbank — no mueven dinero real y no requieren afiliación.
 
+## Panel de administración (`/admin`)
+
+1. Crear el usuario del dueño en **Supabase Dashboard → Authentication → Users
+   → Add user** (email + contraseña). No hay pantalla de registro pública —
+   es intencional.
+2. Agregar ese mismo email a `ADMIN_EMAILS` en `.env.local` (o en Vercel).
+   Es la allowlist que de verdad controla el acceso: aunque el proyecto de
+   Supabase tenga signups públicos habilitados, `middleware.js` y
+   `lib/adminAuth.js` solo dejan pasar a los emails listados acá — conviene
+   además desactivar signups públicos en el dashboard de Supabase (Authentication
+   → Providers → Email) como capa adicional.
+3. Entrar en `/admin/login`.
+
+Todas las páginas de `/admin` leen la base directo con `service_role`
+(igual que el resto del backend) — no hay políticas RLS nuevas que mantener.
+Las mutaciones (crear bodega/arrendatario, registrar pago manual, reintentar
+sync, revocar acceso) pasan por `/api/admin/*`, cada una verificando la sesión
+de nuevo server-side (no solo confían en el middleware).
+
 ## Datos de prueba
 
-El esquema (`sql/schema.sql`) no incluye seed data. Para probar `/checkout` hace
-falta al menos un `tenant`, un `warehouse` y un `rental` en la base:
+El esquema (`sql/schema.sql`) no incluye seed data. La forma más simple de
+crear una bodega + arrendatario de prueba es desde `/admin/bodegas` y
+`/admin/arrendatarios` una vez logueado. También se puede insertar directo
+por SQL:
 
 ```sql
 insert into warehouses (code, name, gate_id, size_m3, monthly_amount)
@@ -66,13 +91,21 @@ lib/transbank.js            Webpay Plus (create/commit), switch integración/pro
 lib/isapi.js                cliente ISAPI Digest + modo mock (ISAPI_MOCK)
 lib/syncAccess.js           pago confirmado → ISAPI → access_control_log → rentals.valid_until
 lib/rut.js                  validación/normalización de RUT chileno
+lib/supabaseBrowserClient.js cliente Supabase Auth para componentes cliente (login)
+lib/supabaseServerClient.js  cliente Supabase Auth para Server Components (sesión)
+lib/adminAuth.js            getAdminUser() — sesión + allowlist ADMIN_EMAILS
+middleware.js                protege /admin/* (redirige a /admin/login sin sesión)
 app/checkout                RUT → bodegas del cliente → pagar
 app/pago-exitoso            confirmación (avisa si la sync de acceso quedó pendiente)
 app/pago-error              rechazo/cancelación
+app/admin/login              login del panel (Supabase Auth)
+app/admin                    dashboard, bodegas, arrendatarios, facturas, acceso
 app/api/rentals/lookup      POST { rut } → bodegas + estado de pago
 app/api/payments/init       POST { rentalId } → crea transacción Webpay
 app/api/payments/confirm    POST (retorno de Webpay) → confirma pago + sincroniza acceso
-app/api/cron/retry-sync     GET/POST protegido → reintenta syncs fallidas
+app/api/payments/manual     POST protegido (admin) → registra pago manual + sincroniza
+app/api/cron/retry-sync     GET/POST protegido (CRON_SECRET) → reintenta syncs fallidas
+app/api/admin/*              CRUD de bodegas/arrendatarios/arriendos + retry-sync/revoke manual
 ```
 
 ## Checklist antes de producción
@@ -111,6 +144,10 @@ Ver también CONTEXTO.md §9 (riesgos) y §10 (checklist de visita técnica).
 - [ ] Revisar RLS (`sql/schema.sql`): queda `enabled` sin policies para
       anon/authenticated por diseño (solo el backend con `service_role` accede).
       Confirmar que ninguna key pública (`anon`) se filtre al frontend.
+- [ ] **Panel admin**: crear el usuario del dueño en Supabase Auth, setear
+      `ADMIN_EMAILS` en Vercel, y desactivar signups públicos en Supabase
+      Dashboard → Authentication → Providers → Email (la allowlist ya bloquea
+      el acceso aunque alguien se registre, pero es una capa extra barata).
 
 ## Principio de diseño (no reabrir sin motivo)
 

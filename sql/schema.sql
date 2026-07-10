@@ -81,9 +81,11 @@ create trigger rentals_set_updated_at
 create table if not exists payments (
   id                  uuid primary key default gen_random_uuid(),
   rental_id           uuid not null references rentals(id) on delete restrict,
-  webpay_token        text not null unique,     -- clave de idempotencia frente a reintentos
-  buy_order           text not null,
-  session_id          text not null,
+  method              text not null default 'webpay'
+                        check (method in ('webpay', 'manual')),
+  webpay_token        text unique,               -- clave de idempotencia frente a reintentos (solo method='webpay')
+  buy_order           text,
+  session_id          text,
   amount              integer not null check (amount >= 0),
   status              text not null default 'pending'
                         check (status in ('pending', 'confirmed', 'failed')),
@@ -91,10 +93,12 @@ create table if not exists payments (
   transaction_date    timestamptz,
   period_start        timestamptz,              -- vigencia que este pago cubre (desde)
   period_end          timestamptz,              -- vigencia que este pago cubre (hasta)
+  registered_by       text,                      -- email del admin que registró un pago manual
+  notes               text,                      -- ej. "efectivo", "transferencia 12345"
   created_at          timestamptz not null default now()
 );
 
-comment on table payments is 'Historial de transacciones Webpay Plus. webpay_token es la clave de idempotencia.';
+comment on table payments is 'Historial de pagos (Webpay o registrados manualmente por un admin). webpay_token es la clave de idempotencia para method=webpay; Postgres permite múltiples NULL en una columna unique, así que los pagos manuales no chocan entre sí.';
 
 create index if not exists payments_rental_id_idx on payments(rental_id);
 create index if not exists payments_status_idx on payments(status);
