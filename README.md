@@ -101,9 +101,10 @@ Ver también CONTEXTO.md §9 (riesgos) y §10 (checklist de visita técnica).
 - [ ] **`CRON_SECRET`** seteado en Vercel (env var) — Vercel Cron agrega
       automáticamente el header `Authorization: Bearer $CRON_SECRET` al invocar
       `/api/cron/retry-sync` si la env var existe con ese nombre exacto.
-- [ ] **Frecuencia del cron** (`vercel.json`, cada 15 min por defecto): en el plan
-      Hobby de Vercel los crons corren máximo 1 vez al día — si se necesita más
-      frecuencia, requiere plan Pro.
+- [ ] **Frecuencia del cron** (`vercel.json`, hoy 1 vez al día a las 9:00 UTC): el
+      plan Hobby de Vercel limita los crons a máximo 1 ejecución diaria. Si se
+      necesita reintentar syncs fallidas más seguido, requiere plan Pro (permite
+      `*/15 * * * *` o similar).
 - [ ] **`NEXT_PUBLIC_SITE_URL`** apuntando al dominio real de producción (se usa
       como `returnUrl` de Webpay — si queda mal seteado, Webpay no puede redirigir
       de vuelta al usuario).
