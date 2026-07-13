@@ -1,0 +1,31 @@
+name: Retry sync cron (cada 15 min)
+
+# El plan Hobby de Vercel limita los cron jobs a 1 ejecución diaria (ver
+# vercel.json). Este workflow es la alternativa gratuita para reintentar
+# sincronizaciones de acceso con más frecuencia sin pagar Vercel Pro.
+#
+# Para activarlo:
+#   1. Pushear esta rama (o mergearla) a la rama por defecto del repo en
+#      GitHub — los cron de Actions solo corren sobre la rama por defecto.
+#   2. Configurar el secreto del repo: gh secret set CRON_SECRET
+#      (mismo valor que la env var CRON_SECRET en Vercel).
+#   3. Opcional: ajustar RETRY_SYNC_URL abajo si el dominio cambia.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  retry-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Llamar a /api/cron/retry-sync
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          RETRY_SYNC_URL: https://bodega-facil-tamp1.vercel.app/api/cron/retry-sync
+        run: |
+          curl -sf -X GET "$RETRY_SYNC_URL" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -o response.json -w "HTTP %{http_code}\n"
+          cat response.json

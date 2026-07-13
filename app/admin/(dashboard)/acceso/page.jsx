@@ -1,6 +1,9 @@
 import { CheckCircle2, AlertTriangle, Ban } from "lucide-react";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import RentalActions from "./RentalActions";
+import Pagination from "../Pagination";
+
+const PAGE_SIZE = 25;
 
 const STATUS_BADGE = {
   active: { text: "Activo", className: "text-ok", icon: CheckCircle2 },
@@ -9,21 +12,30 @@ const STATUS_BADGE = {
   inactive: { text: "Sin activar", className: "text-text-muted", icon: AlertTriangle },
 };
 
-export default async function AccesoPage() {
+export default async function AccesoPage({ searchParams }) {
+  const params = await searchParams;
+  const page = Math.max(1, Number(params?.page) || 1);
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE;
+
   const supabase = getSupabaseAdmin();
   const now = new Date().toISOString();
 
-  const [{ data: rentals }, { data: logs }] = await Promise.all([
+  const [{ data: rentalsPage }, { data: logs }] = await Promise.all([
     supabase
       .from("rentals")
       .select("*, tenants(full_name, rut), warehouses(code, gate_id)")
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .range(from, to),
     supabase
       .from("access_control_log")
       .select("*, rentals(warehouses(code))")
       .order("created_at", { ascending: false })
       .limit(30),
   ]);
+
+  const hasNextPage = (rentalsPage ?? []).length > PAGE_SIZE;
+  const rentals = (rentalsPage ?? []).slice(0, PAGE_SIZE);
 
   return (
     <div className="space-y-8">
@@ -47,7 +59,7 @@ export default async function AccesoPage() {
             </tr>
           </thead>
           <tbody>
-            {(rentals ?? []).map((rental) => {
+            {rentals.map((rental) => {
               const isExpired = !rental.valid_until || rental.valid_until < now;
               const statusKey = rental.status === "suspended" ? "suspended" : isExpired ? "overdue" : "active";
               const badge = STATUS_BADGE[rental.status === "inactive" && !rental.valid_until ? "inactive" : statusKey];
@@ -78,7 +90,7 @@ export default async function AccesoPage() {
                 </tr>
               );
             })}
-            {(rentals ?? []).length === 0 && (
+            {rentals.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-text-muted">
                   No hay arriendos registrados todavía.
@@ -88,6 +100,8 @@ export default async function AccesoPage() {
           </tbody>
         </table>
       </div>
+
+      <Pagination page={page} hasNextPage={hasNextPage} basePath="/admin/acceso" />
 
       <div>
         <h2 className="mb-3 text-sm font-medium text-text-muted">Auditoría ISAPI reciente</h2>
@@ -114,6 +128,11 @@ export default async function AccesoPage() {
                   <td className="px-4 py-3 text-text">{log.action}</td>
                   <td className={`px-4 py-3 font-medium ${log.success ? "text-ok" : "text-danger"}`}>
                     {log.success ? "OK" : "Falló"}
+                    {log.response_payload?.mock && (
+                      <span className="ml-1.5 rounded-full bg-warn/15 px-1.5 py-0.5 text-[10px] font-semibold text-warn">
+                        MOCK
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-xs text-text-muted">{log.error_message ?? "—"}</td>
                 </tr>

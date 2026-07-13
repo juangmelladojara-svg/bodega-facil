@@ -2,6 +2,9 @@ import { CheckCircle2, AlertTriangle } from "lucide-react";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import NewTenantForm from "./NewTenantForm";
 import AssignRentalForm from "./AssignRentalForm";
+import Pagination from "../Pagination";
+
+const PAGE_SIZE = 25;
 
 const clp = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -9,12 +12,24 @@ const clp = new Intl.NumberFormat("es-CL", {
   maximumFractionDigits: 0,
 });
 
-export default async function ArrendatariosPage() {
+export default async function ArrendatariosPage({ searchParams }) {
+  const params = await searchParams;
+  const page = Math.max(1, Number(params?.page) || 1);
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE;
+
   const supabase = getSupabaseAdmin();
-  const [{ data: tenants }, { data: warehouses }] = await Promise.all([
-    supabase.from("tenants").select("*, rentals(*, warehouses(code, name))").order("full_name"),
+  const [{ data: tenantsPage }, { data: warehouses }] = await Promise.all([
+    supabase
+      .from("tenants")
+      .select("*, rentals(*, warehouses(code, name))")
+      .order("full_name")
+      .range(from, to),
     supabase.from("warehouses").select("id, code, rentals(id)").order("code"),
   ]);
+
+  const hasNextPage = (tenantsPage ?? []).length > PAGE_SIZE;
+  const tenants = (tenantsPage ?? []).slice(0, PAGE_SIZE);
 
   const availableWarehouses = (warehouses ?? [])
     .filter((warehouse) => !warehouse.rentals || warehouse.rentals.length === 0)
@@ -30,7 +45,7 @@ export default async function ArrendatariosPage() {
       </div>
 
       <div className="space-y-3">
-        {(tenants ?? []).map((tenant) => (
+        {tenants.map((tenant) => (
           <div key={tenant.id} className="rounded-2xl border border-border bg-surface p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div>
@@ -78,12 +93,14 @@ export default async function ArrendatariosPage() {
           </div>
         ))}
 
-        {(tenants ?? []).length === 0 && (
+        {tenants.length === 0 && (
           <p className="rounded-2xl border border-border bg-surface p-8 text-center text-text-muted">
             No hay arrendatarios registrados todavía.
           </p>
         )}
       </div>
+
+      <Pagination page={page} hasNextPage={hasNextPage} basePath="/admin/arrendatarios" />
     </div>
   );
 }

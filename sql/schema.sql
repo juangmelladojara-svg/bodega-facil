@@ -18,7 +18,7 @@ create table if not exists warehouses (
   name          text not null,                  -- ej. "Bodega 014 · 36 m³"
   gate_id       smallint not null check (gate_id in (1, 2)), -- portón físico (2 puertas)
   size_m3       numeric(8, 2),
-  monthly_amount integer not null check (monthly_amount >= 0), -- CLP, sin decimales
+  monthly_amount integer not null check (monthly_amount > 0), -- CLP, sin decimales
   created_at    timestamptz not null default now()
 );
 
@@ -47,7 +47,7 @@ create table if not exists rentals (
   warehouse_id          uuid not null references warehouses(id) on delete restrict,
   card_uid              text,                   -- UID físico de la tarjeta RFID (EM/MIFARE, por confirmar)
   controller_person_id  text,                   -- ID asignado por el DS-K2602T al hacer createPerson
-  monthly_amount        integer not null check (monthly_amount >= 0),
+  monthly_amount        integer not null check (monthly_amount > 0),
   status                text not null default 'inactive'
                           check (status in ('inactive', 'active', 'overdue', 'suspended')),
   valid_until           timestamptz,            -- vigencia actual de la tarjeta en el controlador
@@ -67,7 +67,8 @@ begin
   new.updated_at = now();
   return new;
 end;
-$$ language plpgsql;
+$$ language plpgsql
+set search_path = '';
 
 drop trigger if exists rentals_set_updated_at on rentals;
 create trigger rentals_set_updated_at
@@ -86,13 +87,17 @@ create table if not exists payments (
   webpay_token        text unique,               -- clave de idempotencia frente a reintentos (solo method='webpay')
   buy_order           text,
   session_id          text,
-  amount              integer not null check (amount >= 0),
+  amount              integer not null check (amount > 0),
   status              text not null default 'pending'
-                        check (status in ('pending', 'confirmed', 'failed')),
+                        -- 'committing': reclamado por un request que está llamando a Transbank
+                        -- ahora mismo (ver app/api/payments/confirm/route.js) — evita que dos
+                        -- POSTs concurrentes de Webpay hagan doble commit o pisen un 'confirmed'.
+                        check (status in ('pending', 'committing', 'confirmed', 'failed')),
   authorization_code  text,
   transaction_date    timestamptz,
   period_start        timestamptz,              -- vigencia que este pago cubre (desde)
   period_end          timestamptz,              -- vigencia que este pago cubre (hasta)
+  synced_at           timestamptz,              -- se setea cuando access_control_log registra un sync exitoso para este pago
   registered_by       text,                      -- email del admin que registró un pago manual
   notes               text,                      -- ej. "efectivo", "transferencia 12345"
   created_at          timestamptz not null default now()
@@ -102,6 +107,8 @@ comment on table payments is 'Historial de pagos (Webpay o registrados manualmen
 
 create index if not exists payments_rental_id_idx on payments(rental_id);
 create index if not exists payments_status_idx on payments(status);
+-- pagos confirmados que todavía no sincronizaron con el controlador (cron de reintento)
+create index if not exists payments_pending_sync_idx on payments(status) where synced_at is null;
 
 -- ─────────────────────────────────────────────────────────────────────────
 -- access_control_log — auditoría de cada llamada ISAPI al controlador
@@ -122,6 +129,7 @@ create table if not exists access_control_log (
 comment on table access_control_log is 'Auditoría de cada llamada ISAPI: qué se envió, qué respondió el controlador, éxito/fallo. Clave para debug en terreno.';
 
 create index if not exists access_control_log_rental_id_idx on access_control_log(rental_id);
+create index if not exists access_control_log_payment_id_idx on access_control_log(payment_id);
 create index if not exists access_control_log_success_idx on access_control_log(success);
 
 -- ─────────────────────────────────────────────────────────────────────────

@@ -1,8 +1,25 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { formatRut, isValidRut } from "@/lib/rut";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
+/**
+ * Endpoint público: dado un RUT válido devuelve nombre + bodegas + estado de
+ * pago. Los RUT chilenos son enumerables, así que sin fricción esto permite
+ * armar una base de datos de clientes/morosidad barriendo rangos. El rate
+ * limit es la mitigación principal (ver lib/rateLimit.js — best-effort, no
+ * reemplaza un WAF real si el tráfico crece).
+ */
 export async function POST(request) {
+  const clientIp = getClientIp(request);
+  const rateLimit = checkRateLimit(`rentals-lookup:${clientIp}`, { limit: 8, windowMs: 5 * 60 * 1000 });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Demasiadas búsquedas. Espera unos minutos e intenta de nuevo." },
+      { status: 429 }
+    );
+  }
+
   const body = await request.json().catch(() => null);
   const rut = body?.rut;
 

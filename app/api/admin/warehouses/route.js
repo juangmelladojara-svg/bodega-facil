@@ -24,6 +24,12 @@ export async function POST(request) {
   if (!code || !name || !gateId || !monthlyAmount) {
     return NextResponse.json({ error: "Faltan campos obligatorios." }, { status: 400 });
   }
+  if (![1, 2].includes(Number(gateId))) {
+    return NextResponse.json({ error: "El portón debe ser 1 o 2." }, { status: 400 });
+  }
+  if (!(Number(monthlyAmount) > 0)) {
+    return NextResponse.json({ error: "El monto mensual debe ser mayor que 0." }, { status: 400 });
+  }
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -39,7 +45,12 @@ export async function POST(request) {
     .single();
 
   if (error) {
-    const message = error.code === "23505" ? "Ya existe una bodega con ese código." : "No se pudo crear la bodega.";
+    const message =
+      error.code === "23505"
+        ? "Ya existe una bodega con ese código."
+        : error.code === "23514"
+          ? "Alguno de los valores no cumple las reglas (¿monto o portón inválido?)."
+          : "No se pudo crear la bodega.";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 

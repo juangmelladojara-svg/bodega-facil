@@ -13,12 +13,16 @@ export default function RentalActions({ rentalId }) {
     setPending(action);
     setMessage("");
 
-    const response = await fetch(`/api/admin/rentals/${rentalId}/${endpoint}`, { method: "POST" });
-    const data = await response.json();
-
-    setMessage(response.ok && data.success ? "OK" : data.error ?? "Falló.");
-    setPending(null);
-    router.refresh();
+    try {
+      const response = await fetch(`/api/admin/rentals/${rentalId}/${endpoint}`, { method: "POST" });
+      const data = await response.json();
+      setMessage(response.ok && data.success ? "OK" : data.error ?? "Falló.");
+    } catch {
+      setMessage("Error de conexión.");
+    } finally {
+      setPending(null);
+      router.refresh();
+    }
   }
 
   return (

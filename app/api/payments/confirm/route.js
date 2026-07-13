@@ -14,16 +14,35 @@ import { syncAccessAfterPayment } from "@/lib/syncAccess";
  * datos ANTES de intentar sincronizar con el controlador. Si ISAPI falla,
  * el pago igual queda registrado — solo el acceso físico queda pendiente
  * de reintento (ver lib/syncAccess.js y /api/cron/retry-sync).
+ *
+ * Idempotencia frente a POSTs concurrentes: Webpay puede reintentar el
+ * retorno (doble-click, retry de red, refresh). Antes de llamar a `commit`,
+ * "reclamamos" el pago con un UPDATE condicionado a `status = 'pending'`
+ * (pending → committing). Solo un request gana esa carrera — el resto ve
+ * 0 filas afectadas y nunca llega a tocar Transbank ni a pisar el estado.
+ * Todos los updates posteriores (confirmed/failed) van condicionados a
+ * `status = 'committing'`, así un pago ya `confirmed` nunca puede
+ * degradarse a `failed`.
  */
 export async function POST(request) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
   const supabase = getSupabaseAdmin();
 
   const formData = await request.formData();
   const tokenWs = formData.get("token_ws");
   const tbkToken = formData.get("TBK_TOKEN");
+  const tbkBuyOrder = formData.get("TBK_ORDEN_COMPRA");
 
   if (!tokenWs || tbkToken) {
+    // Usuario canceló o hubo timeout en Webpay. Si alcanzamos a identificar
+    // el pago por buy_order, lo marcamos failed para no dejarlo pending para siempre.
+    if (tbkBuyOrder) {
+      await supabase
+        .from("payments")
+        .update({ status: "failed" })
+        .eq("buy_order", tbkBuyOrder)
+        .eq("status", "pending");
+    }
     return NextResponse.redirect(`${siteUrl}/pago-error?motivo=cancelado`, 303);
   }
 
@@ -37,8 +56,6 @@ export async function POST(request) {
     return NextResponse.redirect(`${siteUrl}/pago-error?motivo=no_encontrado`, 303);
   }
 
-  // Idempotencia: Webpay puede reintentar el POST de retorno (doble-click,
-  // refresh del navegador). Si ya está confirmado, no volvemos a hacer commit.
   if (payment.status === "confirmed") {
     return NextResponse.redirect(
       `${siteUrl}/pago-exitoso?rentalId=${payment.rental_id}`,
@@ -46,11 +63,34 @@ export async function POST(request) {
     );
   }
 
+  const { data: claimed } = await supabase
+    .from("payments")
+    .update({ status: "committing" })
+    .eq("id", payment.id)
+    .eq("status", "pending")
+    .select()
+    .maybeSingle();
+
+  if (!claimed) {
+    // Perdimos la carrera: otro request ya está (o ya terminó de) procesar
+    // este mismo token. Releemos el estado real antes de decidir qué mostrar.
+    const { data: current } = await supabase
+      .from("payments")
+      .select("status")
+      .eq("id", payment.id)
+      .maybeSingle();
+
+    if (current?.status === "confirmed") {
+      return NextResponse.redirect(`${siteUrl}/pago-exitoso?rentalId=${payment.rental_id}`, 303);
+    }
+    return NextResponse.redirect(`${siteUrl}/pago-error?motivo=procesando`, 303);
+  }
+
   let commitResult;
   try {
     commitResult = await commitWebpayTransaction(tokenWs);
   } catch {
-    await supabase.from("payments").update({ status: "failed" }).eq("id", payment.id);
+    await supabase.from("payments").update({ status: "failed" }).eq("id", payment.id).eq("status", "committing");
     return NextResponse.redirect(`${siteUrl}/pago-error?motivo=rechazado`, 303);
   }
 
@@ -58,7 +98,7 @@ export async function POST(request) {
     commitResult?.response_code === 0 && commitResult?.status === "AUTHORIZED";
 
   if (!wasAuthorized) {
-    await supabase.from("payments").update({ status: "failed" }).eq("id", payment.id);
+    await supabase.from("payments").update({ status: "failed" }).eq("id", payment.id).eq("status", "committing");
     return NextResponse.redirect(`${siteUrl}/pago-error?motivo=rechazado`, 303);
   }
 
@@ -73,31 +113,42 @@ export async function POST(request) {
       transaction_date: commitResult.transaction_date ?? now.toISOString(),
     })
     .eq("id", payment.id)
+    .eq("status", "committing")
     .select()
     .single();
 
   if (updateError || !confirmedPayment) {
-    // El pago fue autorizado por Transbank pero no logramos guardarlo — no
-    // intentamos sincronizar acceso sin tener el pago persistido.
+    // Transbank autorizó pero no logramos persistirlo — no intentamos
+    // sincronizar acceso sin tener el pago guardado. El pago queda en
+    // "committing"; el cron de reconciliación lo revisa contra Transbank.
     return NextResponse.redirect(`${siteUrl}/pago-error?motivo=error_interno`, 303);
   }
 
   // A partir de acá el pago YA está confirmado y persistido. Lo que sigue
-  // (sincronizar con el controlador) puede fallar sin que el pago se pierda.
-  const syncResult = await syncAccessAfterPayment({ rental, payment: confirmedPayment });
-
-  await supabase
-    .from("payments")
-    .update({
-      period_start: now.toISOString(),
-      period_end: syncResult.newValidUntil.toISOString(),
-    })
-    .eq("id", confirmedPayment.id);
+  // (sincronizar con el controlador) puede fallar sin que el pago se pierda
+  // — por eso va en su propio try/catch: cualquier excepción (incluida una
+  // división por cero si `monthly_amount` fuera inválido) se trata como
+  // "sync pendiente", nunca como error 500 con el pago ya cobrado.
+  let syncSucceeded = false;
+  try {
+    const syncResult = await syncAccessAfterPayment({ rental, payment: confirmedPayment });
+    syncSucceeded = syncResult.success;
+  } catch (err) {
+    console.error("syncAccessAfterPayment lanzó una excepción no controlada:", err);
+  }
 
   const params = new URLSearchParams({
     rentalId: rental.id,
-    syncPending: syncResult.success ? "false" : "true",
+    syncPending: syncSucceeded ? "false" : "true",
   });
 
   return NextResponse.redirect(`${siteUrl}/pago-exitoso?${params.toString()}`, 303);
+}
+
+/**
+ * Si alguien recarga esta URL directamente (GET) — típicamente el navegador
+ * reintentando tras el POST de Webpay — no hay nada que procesar acá.
+ */
+export async function GET(request) {
+  return NextResponse.redirect(new URL("/checkout", request.url), 303);
 }

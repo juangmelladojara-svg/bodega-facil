@@ -2,8 +2,18 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { createWebpayTransaction } from "@/lib/transbank";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(request) {
+  const clientIp = getClientIp(request);
+  const rateLimit = checkRateLimit(`payments-init:${clientIp}`, { limit: 20, windowMs: 5 * 60 * 1000 });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Demasiados intentos de pago. Espera unos minutos e intenta de nuevo." },
+      { status: 429 }
+    );
+  }
+
   const body = await request.json().catch(() => null);
   const rentalId = body?.rentalId;
 
@@ -23,13 +33,14 @@ export async function POST(request) {
     return NextResponse.json({ error: "Arriendo no encontrado." }, { status: 404 });
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!siteUrl) {
+  if (rental.status === "suspended") {
     return NextResponse.json(
-      { error: "Falta NEXT_PUBLIC_SITE_URL en las variables de entorno." },
-      { status: 500 }
+      { error: "El acceso de esta bodega está suspendido. Contáctanos para regularizarlo." },
+      { status: 403 }
     );
   }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
 
   // buy_order de Transbank acepta máx. 26 caracteres alfanuméricos.
   const buyOrder = `bf-${rental.id.replace(/-/g, "").slice(0, 12)}-${Date.now().toString(36)}`.slice(

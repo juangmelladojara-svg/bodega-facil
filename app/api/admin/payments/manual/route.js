@@ -15,8 +15,8 @@ export async function POST(request) {
   const body = await request.json().catch(() => null);
   const { rentalId, amount, notes } = body ?? {};
 
-  if (!rentalId || !amount) {
-    return NextResponse.json({ error: "Falta rentalId o amount." }, { status: 400 });
+  if (!rentalId || !(Number(amount) > 0)) {
+    return NextResponse.json({ error: "Falta rentalId o el monto debe ser mayor que 0." }, { status: 400 });
   }
 
   const supabase = getSupabaseAdmin();
@@ -31,8 +31,6 @@ export async function POST(request) {
     return NextResponse.json({ error: "Arriendo no encontrado." }, { status: 404 });
   }
 
-  const now = new Date();
-
   const { data: payment, error: paymentError } = await supabase
     .from("payments")
     .insert({
@@ -40,7 +38,7 @@ export async function POST(request) {
       method: "manual",
       amount: Number(amount),
       status: "confirmed",
-      transaction_date: now.toISOString(),
+      transaction_date: new Date().toISOString(),
       registered_by: admin.email,
       notes: notes || null,
     })
@@ -51,15 +49,17 @@ export async function POST(request) {
     return NextResponse.json({ error: "No se pudo registrar el pago." }, { status: 500 });
   }
 
-  const syncResult = await syncAccessAfterPayment({ rental, payment });
+  // El pago YA quedó confirmado y persistido. syncAccessAfterPayment también
+  // guarda period_start/period_end/synced_at sobre este mismo registro — si
+  // lanza (ej. dato inválido), lo tratamos como sync pendiente, no como
+  // error 500 sobre un pago que de todas formas ya se registró.
+  let syncSuccess = false;
+  try {
+    const syncResult = await syncAccessAfterPayment({ rental, payment });
+    syncSuccess = syncResult.success;
+  } catch (err) {
+    console.error("syncAccessAfterPayment (pago manual) lanzó una excepción:", err);
+  }
 
-  await supabase
-    .from("payments")
-    .update({
-      period_start: now.toISOString(),
-      period_end: syncResult.newValidUntil.toISOString(),
-    })
-    .eq("id", payment.id);
-
-  return NextResponse.json({ payment, syncSuccess: syncResult.success });
+  return NextResponse.json({ payment, syncSuccess });
 }

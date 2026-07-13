@@ -20,18 +20,21 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: "Arriendo no encontrado." }, { status: 404 });
   }
 
+  // Solo pagos confirmados y NO sincronizados: si ya hay un `synced_at`, este
+  // pago ya extendió la vigencia una vez — reintentarlo la regalaría de nuevo.
   const { data: payment, error: paymentError } = await supabase
     .from("payments")
     .select("*")
     .eq("rental_id", id)
     .eq("status", "confirmed")
+    .is("synced_at", null)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
   if (paymentError || !payment) {
     return NextResponse.json(
-      { error: "Este arriendo no tiene ningún pago confirmado que sincronizar." },
+      { error: "Este arriendo no tiene pagos pendientes de sincronizar." },
       { status: 400 }
     );
   }

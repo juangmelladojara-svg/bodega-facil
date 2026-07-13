@@ -6,6 +6,8 @@ const MESSAGES = {
   rechazado: "Tu banco rechazó el pago. Puedes intentarlo nuevamente.",
   no_encontrado: "No pudimos encontrar tu transacción. Intenta iniciar el pago de nuevo.",
   error_interno: "Ocurrió un error interno al procesar tu pago. Escríbenos si el problema persiste.",
+  procesando:
+    "Tu pago ya se está procesando en otra pestaña o intento — espera un momento y revisa el estado de tu bodega antes de volver a pagar.",
 };
 
 export default async function PagoErrorPage({ searchParams }) {

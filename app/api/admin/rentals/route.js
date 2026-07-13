@@ -12,6 +12,9 @@ export async function POST(request) {
   if (!tenantId || !warehouseId) {
     return NextResponse.json({ error: "Falta tenantId o warehouseId." }, { status: 400 });
   }
+  if (monthlyAmount !== undefined && monthlyAmount !== null && !(Number(monthlyAmount) > 0)) {
+    return NextResponse.json({ error: "El monto mensual debe ser mayor que 0." }, { status: 400 });
+  }
 
   const supabase = getSupabaseAdmin();
 
@@ -39,7 +42,11 @@ export async function POST(request) {
 
   if (error) {
     const message =
-      error.code === "23505" ? "Esa bodega ya tiene un arriendo asignado." : "No se pudo crear el arriendo.";
+      error.code === "23505"
+        ? "Esa bodega ya tiene un arriendo asignado."
+        : error.code === "23514"
+          ? "El monto mensual debe ser mayor que 0."
+          : "No se pudo crear el arriendo.";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 

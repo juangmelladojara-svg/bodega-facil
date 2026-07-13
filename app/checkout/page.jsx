@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Search, Loader2, CreditCard, CheckCircle2, AlertTriangle, Warehouse } from "lucide-react";
+import { isValidRut } from "@/lib/rut";
 
 const clp = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -18,6 +19,7 @@ export default function CheckoutPage() {
   const [payingRentalId, setPayingRentalId] = useState(null);
   const [webpayAction, setWebpayAction] = useState(null);
   const formRef = useRef(null);
+  const isPaying = payingRentalId !== null;
 
   useEffect(() => {
     if (webpayAction && formRef.current) {
@@ -27,8 +29,15 @@ export default function CheckoutPage() {
 
   async function handleLookup(event) {
     event.preventDefault();
-    setStatus("looking");
     setErrorMessage("");
+
+    if (!isValidRut(rut)) {
+      setStatus("error");
+      setErrorMessage("Ese RUT no parece válido. Revísalo e intenta de nuevo.");
+      return;
+    }
+
+    setStatus("looking");
 
     try {
       const response = await fetch("/api/rentals/lookup", {
@@ -54,6 +63,7 @@ export default function CheckoutPage() {
   }
 
   async function handlePay(rentalId) {
+    if (isPaying) return;
     setPayingRentalId(rentalId);
     setErrorMessage("");
 
@@ -91,10 +101,16 @@ export default function CheckoutPage() {
 
         <div className="rounded-2xl border border-border bg-surface p-6 shadow-xl shadow-black/20">
           <form onSubmit={handleLookup} className="flex gap-2">
+            <label htmlFor="rut" className="sr-only">
+              RUT
+            </label>
             <input
+              id="rut"
               type="text"
               inputMode="text"
+              autoComplete="off"
               placeholder="12.345.678-9"
+              aria-label="RUT"
               value={rut}
               onChange={(event) => setRut(event.target.value)}
               className="flex-1 rounded-lg border border-border bg-surface-2 px-4 py-3 text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
@@ -103,6 +119,7 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={status === "looking"}
+              aria-label="Buscar"
               className="flex items-center justify-center rounded-lg bg-accent px-4 py-3 text-white transition hover:bg-accent-2 disabled:opacity-60"
             >
               {status === "looking" ? (
@@ -150,7 +167,7 @@ export default function CheckoutPage() {
 
                   <button
                     onClick={() => handlePay(rental.rentalId)}
-                    disabled={payingRentalId === rental.rentalId}
+                    disabled={isPaying}
                     className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent-2 disabled:opacity-60"
                   >
                     {payingRentalId === rental.rentalId ? (
