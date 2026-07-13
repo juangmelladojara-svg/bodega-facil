@@ -22,7 +22,7 @@ export default async function AdminDashboardLayout({ children }) {
       <aside className="flex flex-col border-b border-border bg-surface md:w-64 md:shrink-0 md:border-b-0 md:border-r">
         <div className="p-5">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-2">
-            Bodega Fácil
+            Bodegar Fácil
           </p>
           <p className="mt-1 text-sm font-medium text-text">Panel de administración</p>
         </div>

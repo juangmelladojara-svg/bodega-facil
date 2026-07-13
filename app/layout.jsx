@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Bodega Fácil — Control de acceso",
+  title: "Bodegar Fácil — Control de acceso",
   description: "Consulta tu bodega, paga tu mensualidad y habilita tu tarjeta de acceso.",
   robots: { index: false, follow: false },
 };

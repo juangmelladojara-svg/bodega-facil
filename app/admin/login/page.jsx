@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-2">
-            Bodega Fácil
+            Bodegar Fácil
           </p>
           <h1 className="mt-2 text-2xl font-semibold text-text">Panel de administración</h1>
         </div>

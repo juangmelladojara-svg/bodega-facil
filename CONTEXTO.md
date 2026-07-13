@@ -8,7 +8,7 @@
 
 ## 0. Cliente y relación con el resto del repo
 
-- Cliente: **Bodega Fácil** (bodegarfacil.cl, Temuco) — arriendo de bodegas (self-storage).
+- Cliente: **Bodegar Fácil** (bodegarfacil.cl, Temuco) — arriendo de bodegas (self-storage).
 - Este repo fusiona dos piezas bajo un solo dominio/deploy: la landing pública de
   marketing (HTML estático en `content/index.html` + `public/valores.html`, ver
   [`../BRIEF.md`](../BRIEF.md)) y esta app de control de acceso + cobro (Next.js,

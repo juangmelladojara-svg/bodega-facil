@@ -1,4 +1,4 @@
--- Bodega Fácil — Control de acceso
+-- Bodegar Fácil — Control de acceso
 -- Esquema inicial. Ejecutar en el SQL editor de Supabase o vía `supabase db push`.
 --
 -- Modelo de acceso: TODAS las tablas se consultan exclusivamente desde el backend

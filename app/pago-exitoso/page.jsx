@@ -11,7 +11,7 @@ export default async function PagoExitosoPage({ searchParams }) {
         <CheckCircle2 className="mx-auto size-12 text-ok" />
         <h1 className="mt-4 text-xl font-semibold text-text">Pago confirmado</h1>
         <p className="mt-2 text-sm text-text-muted">
-          Tu pago quedó registrado correctamente. Gracias por confiar en Bodega Fácil.
+          Tu pago quedó registrado correctamente. Gracias por confiar en Bodegar Fácil.
         </p>
 
         {syncPending && (

@@ -1,4 +1,4 @@
-# Bodega Fácil — sitio + control de acceso
+# Bodegar Fácil — sitio + control de acceso
 
 Un solo proyecto Next.js que sirve todo bajo el mismo dominio:
 
