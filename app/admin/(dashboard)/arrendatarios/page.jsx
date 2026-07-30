@@ -31,8 +31,9 @@ export default async function ArrendatariosPage({ searchParams }) {
   const hasNextPage = (tenantsPage ?? []).length > PAGE_SIZE;
   const tenants = (tenantsPage ?? []).slice(0, PAGE_SIZE);
 
+  // rentals viene embebido como objeto (relación 1-a-1, warehouse_id es unique en rentals)
   const availableWarehouses = (warehouses ?? [])
-    .filter((warehouse) => !warehouse.rentals || warehouse.rentals.length === 0)
+    .filter((warehouse) => !warehouse.rentals)
     .map(({ id, code }) => ({ id, code }));
 
   const now = new Date().toISOString();

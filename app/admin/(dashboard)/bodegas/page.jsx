@@ -42,7 +42,8 @@ export default async function BodegasPage() {
                 <td className="px-4 py-3 text-text-muted">{warehouse.size_m3 ?? "—"}</td>
                 <td className="px-4 py-3 text-text-muted">{clp.format(warehouse.monthly_amount)}</td>
                 <td className="px-4 py-3 text-text-muted">
-                  {warehouse.rentals?.length > 0 ? "Ocupada" : "Libre"}
+                  {/* rentals viene embebido como objeto (relación 1-a-1, warehouse_id es unique) */}
+                  {warehouse.rentals ? "Ocupada" : "Libre"}
                 </td>
               </tr>
             ))}
