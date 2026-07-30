@@ -59,14 +59,14 @@ export default function NewWarehouseForm() {
       <Field label="Código" value={form.code} onChange={update("code")} placeholder="B-014" required />
       <Field label="Nombre" value={form.name} onChange={update("name")} placeholder="Bodega 014 · 36 m³" required />
       <div>
-        <label className="mb-1.5 block text-sm text-text-muted">Portón</label>
+        <label className="mb-1.5 block text-sm text-text-muted">Patio</label>
         <select
           value={form.gateId}
           onChange={update("gateId")}
           className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-accent"
         >
-          <option value="1">Portón 1</option>
-          <option value="2">Portón 2</option>
+          <option value="1">Patio 1</option>
+          <option value="2">Patio 2</option>
         </select>
       </div>
       <Field label="Tamaño (m³)" type="number" value={form.sizeM3} onChange={update("sizeM3")} />

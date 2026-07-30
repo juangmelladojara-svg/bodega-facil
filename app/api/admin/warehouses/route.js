@@ -25,7 +25,7 @@ export async function POST(request) {
     return NextResponse.json({ error: "Faltan campos obligatorios." }, { status: 400 });
   }
   if (![1, 2].includes(Number(gateId))) {
-    return NextResponse.json({ error: "El portón debe ser 1 o 2." }, { status: 400 });
+    return NextResponse.json({ error: "El patio debe ser 1 o 2." }, { status: 400 });
   }
   if (!(Number(monthlyAmount) > 0)) {
     return NextResponse.json({ error: "El monto mensual debe ser mayor que 0." }, { status: 400 });
@@ -49,7 +49,7 @@ export async function POST(request) {
       error.code === "23505"
         ? "Ya existe una bodega con ese código."
         : error.code === "23514"
-          ? "Alguno de los valores no cumple las reglas (¿monto o portón inválido?)."
+          ? "Alguno de los valores no cumple las reglas (¿monto o patio inválido?)."
           : "No se pudo crear la bodega.";
     return NextResponse.json({ error: message }, { status: 400 });
   }

@@ -6,7 +6,7 @@ Un solo proyecto Next.js que sirve todo bajo el mismo dominio:
   hecho a mano (GSAP por CDN, sin build), servido tal cual — `/` pasa por
   [`app/route.js`](./app/route.js), `valores.html` se sirve directo desde `public/`.
 - **Portal de control de acceso** (`/checkout`, `/api/*`): cobro mensual (Webpay
-  Plus) vinculado a la habilitación automática de tarjetas RFID en 2 portones
+  Plus) vinculado a la habilitación automática de tarjetas RFID en 2 patios
   (controlador Hikvision DS-K2602T vía ISAPI). Ver [`CONTEXTO.md`](./CONTEXTO.md)
   para el detalle completo de arquitectura y flujo de negocio de esta parte.
 - **Panel de administración** (`/admin/*`): para el dueño — gestiona bodegas y
@@ -113,7 +113,7 @@ app/api/admin/*              CRUD de bodegas/arrendatarios/arriendos + retry-syn
 Ver también CONTEXTO.md §9 (riesgos) y §10 (checklist de visita técnica).
 
 - [ ] **Visita técnica ejecutada**: tecnología de tarjeta confirmada (EM 125kHz vs
-      MIFARE), datos del motor de cada portón, conectividad del sitio.
+      MIFARE), datos del motor de cada patio, conectividad del sitio.
 - [ ] **Payload ISAPI validado contra hardware real.** `lib/isapi.js` implementa el
       formato público del ISAPI Developer Guide (`UserInfo`, `Valid.beginTime/endTime`,
       `CardInfo`), pero no está confirmado contra el firmware específico del

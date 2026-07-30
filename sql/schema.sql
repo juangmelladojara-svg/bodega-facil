@@ -10,19 +10,19 @@
 create extension if not exists "pgcrypto";
 
 -- ─────────────────────────────────────────────────────────────────────────
--- warehouses — bodegas físicas, cada una atada a un portón controlado por ISAPI
+-- warehouses — bodegas físicas, cada una atada a un patio controlado por ISAPI
 -- ─────────────────────────────────────────────────────────────────────────
 create table if not exists warehouses (
   id            uuid primary key default gen_random_uuid(),
   code          text not null unique,           -- ej. "B-014"
   name          text not null,                  -- ej. "Bodega 014 · 36 m³"
-  gate_id       smallint not null check (gate_id in (1, 2)), -- portón físico (2 puertas)
+  gate_id       smallint not null check (gate_id in (1, 2)), -- patio físico (2 accesos)
   size_m3       numeric(8, 2),
   monthly_amount integer not null check (monthly_amount > 0), -- CLP, sin decimales
   created_at    timestamptz not null default now()
 );
 
-comment on table warehouses is 'Bodegas físicas y su portón asociado (gate_id 1 o 2).';
+comment on table warehouses is 'Bodegas físicas y su patio asociado (gate_id 1 o 2).';
 
 -- ─────────────────────────────────────────────────────────────────────────
 -- tenants — arrendatarios

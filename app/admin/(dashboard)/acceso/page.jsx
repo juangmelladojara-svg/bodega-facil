@@ -69,7 +69,7 @@ export default async function AccesoPage({ searchParams }) {
                 <tr key={rental.id} className="border-b border-border last:border-0">
                   <td className="px-4 py-3 font-mono text-text">
                     {rental.warehouses?.code}
-                    <span className="ml-1 text-xs text-text-muted">(portón {rental.warehouses?.gate_id})</span>
+                    <span className="ml-1 text-xs text-text-muted">(patio {rental.warehouses?.gate_id})</span>
                   </td>
                   <td className="px-4 py-3 text-text">{rental.tenants?.full_name ?? "—"}</td>
                   <td className={`px-4 py-3 font-medium ${badge.className}`}>

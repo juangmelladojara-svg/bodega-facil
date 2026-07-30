@@ -19,9 +19,9 @@
 
 ## 1. Problema y alcance
 
-Empresa de arriendo de bodegas con **2 portones físicos**, cada uno con motor ya instalado.
+Empresa de arriendo de bodegas con **2 patios físicos**, cada uno con motor ya instalado.
 Se necesita: cuando un arrendatario paga su mensualidad, su tarjeta RFID se habilita
-automáticamente para abrir su portón; si no paga, se deshabilita. Todo esto sin depender de
+automáticamente para abrir su patio; si no paga, se deshabilita. Todo esto sin depender de
 un servidor corriendo 24/7 vigilando activamente.
 
 ## 2. Decisión de arquitectura (ya tomada, no reabrir sin motivo)
@@ -41,7 +41,7 @@ un servidor corriendo 24/7 vigilando activamente.
   librería oficial — cliente propio con `digest-fetch`.
 
 **Hardware:**
-- Motor de portón ya instalado en ambos portones — el controlador solo simula el pulso de
+- Motor de patio ya instalado en ambos patios — el controlador solo simula el pulso de
   apertura (relé conectado a la entrada de "botón" que el motor ya recibe).
 - Tecnología de tarjeta **sin confirmar** (EM 125kHz vs MIFARE) — pendiente de visita técnica.
 
@@ -91,7 +91,7 @@ que el pago desaparezca.
 
 | Tabla | Propósito |
 |---|---|
-| `warehouses` | Bodegas físicas, cada una asociada a un portón (`gate_id`) |
+| `warehouses` | Bodegas físicas, cada una asociada a un patio (`gate_id`) |
 | `tenants` | Arrendatarios: RUT, nombre, contacto |
 | `rentals` | Relación arrendatario↔bodega↔tarjeta física. Incluye `controller_person_id` (ID asignado por el controlador), monto mensual, estado (`inactive/active/overdue/suspended`), `valid_until` |
 | `payments` | Historial de pagos. `webpay_token` único como clave de idempotencia frente a reintentos de Transbank |
@@ -146,7 +146,7 @@ que el pago desaparezca.
 ## 10. Checklist de visita técnica (pendiente de ejecutar)
 
 - Prueba de tecnología de tarjeta con lector dual-frecuencia.
-- Datos del motor de cada portón (marca, voltaje, tipo de entrada de activación).
+- Datos del motor de cada patio (marca, voltaje, tipo de entrada de activación).
 - Estado de la conectividad a internet en el sitio.
 - Alimentación eléctrica y respaldo.
 - Recopilación de datos reales de arrendatarios para poblar la base de datos.

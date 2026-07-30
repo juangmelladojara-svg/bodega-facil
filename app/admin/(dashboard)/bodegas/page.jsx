@@ -27,7 +27,7 @@ export default async function BodegasPage() {
             <tr className="border-b border-border text-text-muted">
               <th className="px-4 py-3 font-medium">Código</th>
               <th className="px-4 py-3 font-medium">Nombre</th>
-              <th className="px-4 py-3 font-medium">Portón</th>
+              <th className="px-4 py-3 font-medium">Patio</th>
               <th className="px-4 py-3 font-medium">m³</th>
               <th className="px-4 py-3 font-medium">Mensual</th>
               <th className="px-4 py-3 font-medium">Arriendo</th>
