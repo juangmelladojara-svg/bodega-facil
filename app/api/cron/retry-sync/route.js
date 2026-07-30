@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { getPendingSyncPayments, syncAccessAfterPayment } from "@/lib/syncAccess";
 import { getWebpayTransactionStatus } from "@/lib/transbank";
+import { syncLateFeeInvoices } from "@/lib/invoices";
 
 const STALE_PAYMENT_MS = 15 * 60 * 1000;
 
@@ -133,8 +134,9 @@ async function runCronJob() {
   const reconciled = await reconcileStalePayments();
   const synced = await retryPendingSyncs();
   const overdueCount = await markOverdueRentals();
+  const lateFeeInvoices = await syncLateFeeInvoices();
 
-  return { reconciled, synced, overdueCount };
+  return { reconciled, synced, overdueCount, lateFeeInvoices };
 }
 
 export async function GET(request) {
@@ -142,12 +144,13 @@ export async function GET(request) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
 
-  const { reconciled, synced, overdueCount } = await runCronJob();
+  const { reconciled, synced, overdueCount, lateFeeInvoices } = await runCronJob();
 
   return NextResponse.json({
     reconciliation: { processed: reconciled.length, results: reconciled },
     sync: { processed: synced.length, succeeded: synced.filter((r) => r.success).length, results: synced },
     rentalsMarkedOverdue: overdueCount,
+    lateFeeInvoicesUpdated: lateFeeInvoices.length,
   });
 }
 

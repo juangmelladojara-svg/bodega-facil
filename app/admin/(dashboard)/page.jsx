@@ -12,9 +12,11 @@ import {
   ArrowRight,
   ReceiptText,
   KeyRound,
+  AlertTriangle,
 } from "lucide-react";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { getPendingSyncPayments } from "@/lib/syncAccess";
+import { getPendingAuthorizationInvoices } from "@/lib/invoices";
 import { Meter, ProportionBar } from "./Bars";
 import RevenueTrendChart from "./RevenueTrendChart";
 
@@ -70,6 +72,7 @@ export default async function AdminDashboardPage() {
     { data: recentPayments },
     { data: recentLogs },
     pendingSyncPayments,
+    pendingAuthInvoices,
   ] = await Promise.all([
     supabase.from("warehouses").select("*", { count: "exact", head: true }),
     supabase.from("tenants").select("*", { count: "exact", head: true }),
@@ -89,6 +92,9 @@ export default async function AdminDashboardPage() {
       .order("created_at", { ascending: false })
       .limit(6),
     getPendingSyncPayments(),
+    // defensivo: si la tabla `invoices` todavía no existe (migración no
+    // corrida), el dashboard no debe caerse entero por esto.
+    getPendingAuthorizationInvoices().catch(() => []),
   ]);
 
   const allRentals = rentals ?? [];
@@ -176,15 +182,46 @@ export default async function AdminDashboardPage() {
         </p>
       </div>
 
+      {pendingAuthInvoices.length > 0 && (
+        <div className="rounded-2xl border border-danger/40 bg-danger/10 p-5">
+          <p className="flex items-center gap-2 text-sm font-semibold text-danger">
+            <AlertTriangle className="size-4" />
+            {pendingAuthInvoices.length} factura(s) de multa por atraso esperando tu autorización
+          </p>
+          <p className="mt-1 text-sm text-text-muted">
+            Hay arriendos vencidos con multa diaria ($15.000/día) calculada — ninguna se cobra
+            sin que la autorices primero.
+          </p>
+          <ul className="mt-3 space-y-1.5">
+            {pendingAuthInvoices.slice(0, 4).map((inv) => (
+              <li key={inv.id} className="flex items-center justify-between text-sm">
+                <span className="text-text">
+                  {inv.rentals?.warehouses?.code} — {inv.rentals?.tenants?.full_name ?? "—"} ·{" "}
+                  {inv.days_late} día(s)
+                </span>
+                <span className="font-medium text-text">{clp.format(inv.total_amount)}</span>
+              </li>
+            ))}
+          </ul>
+          <Link
+            href="/admin/facturas?filter=vencidas"
+            className="mt-3 inline-flex items-center gap-1.5 text-sm text-danger underline hover:no-underline"
+          >
+            Revisar y autorizar
+            <ArrowRight className="size-3.5" />
+          </Link>
+        </div>
+      )}
+
       {/* Fila 1 — KPIs principales */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-border bg-surface p-5">
           <Percent className="size-5 text-accent-2" />
           <p className="mt-3 text-2xl font-semibold text-text">
-            {warehousesCount > 0 ? Math.round((occupiedCount / warehousesCount) * 100) : 0}%
+            {Math.max((warehousesCount ?? 0) - occupiedCount, 0)}
           </p>
           <p className="text-sm text-text-muted">
-            Ocupación ({occupiedCount}/{warehousesCount ?? 0})
+            Bodegas disponibles ({occupiedCount} ocupadas de {warehousesCount ?? 0})
           </p>
           <div className="mt-3">
             <Meter value={occupiedCount} max={warehousesCount ?? 0} color="var(--color-accent-2)" />

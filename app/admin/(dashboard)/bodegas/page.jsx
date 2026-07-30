@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import NewWarehouseForm from "./NewWarehouseForm";
 
@@ -36,7 +37,11 @@ export default async function BodegasPage() {
           <tbody>
             {(warehouses ?? []).map((warehouse) => (
               <tr key={warehouse.id} className="border-b border-border last:border-0">
-                <td className="px-4 py-3 font-mono text-text">{warehouse.code}</td>
+                <td className="px-4 py-3 font-mono text-text">
+                  <Link href={`/admin/bodegas/${warehouse.id}`} className="hover:text-accent-2 hover:underline">
+                    {warehouse.code}
+                  </Link>
+                </td>
                 <td className="px-4 py-3 text-text">{warehouse.name}</td>
                 <td className="px-4 py-3 text-text-muted">{warehouse.gate_id}</td>
                 <td className="px-4 py-3 text-text-muted">{warehouse.size_m3 ?? "—"}</td>
