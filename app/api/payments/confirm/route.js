@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { commitWebpayTransaction } from "@/lib/transbank";
 import { syncAccessAfterPayment } from "@/lib/syncAccess";
+import { releaseChargesForPayment } from "@/lib/charges";
 
 /**
  * Webpay Plus hace un POST (form-urlencoded) del navegador del cliente a esta
@@ -37,11 +38,14 @@ export async function POST(request) {
     // Usuario canceló o hubo timeout en Webpay. Si alcanzamos a identificar
     // el pago por buy_order, lo marcamos failed para no dejarlo pending para siempre.
     if (tbkBuyOrder) {
-      await supabase
+      const { data: cancelled } = await supabase
         .from("payments")
         .update({ status: "failed" })
         .eq("buy_order", tbkBuyOrder)
-        .eq("status", "pending");
+        .eq("status", "pending")
+        .select("id")
+        .maybeSingle();
+      if (cancelled) await releaseChargesForPayment(cancelled.id);
     }
     return NextResponse.redirect(`${siteUrl}/pago-error?motivo=cancelado`, 303);
   }
@@ -91,6 +95,7 @@ export async function POST(request) {
     commitResult = await commitWebpayTransaction(tokenWs);
   } catch {
     await supabase.from("payments").update({ status: "failed" }).eq("id", payment.id).eq("status", "committing");
+    await releaseChargesForPayment(payment.id);
     return NextResponse.redirect(`${siteUrl}/pago-error?motivo=rechazado`, 303);
   }
 
@@ -99,6 +104,7 @@ export async function POST(request) {
 
   if (!wasAuthorized) {
     await supabase.from("payments").update({ status: "failed" }).eq("id", payment.id).eq("status", "committing");
+    await releaseChargesForPayment(payment.id);
     return NextResponse.redirect(`${siteUrl}/pago-error?motivo=rechazado`, 303);
   }
 

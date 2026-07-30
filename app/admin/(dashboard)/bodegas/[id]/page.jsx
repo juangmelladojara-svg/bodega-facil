@@ -70,6 +70,9 @@ export default async function BodegaFichaPage({ params }) {
 
   const badge = rental ? STATUS_BADGE[rental.status] ?? STATUS_BADGE.inactive : null;
   const BadgeIcon = badge?.icon;
+  const unbilledChargesTotal = (charges ?? [])
+    .filter((c) => c.status === "confirmed" && !c.payment_id)
+    .reduce((sum, c) => sum + c.amount, 0);
 
   return (
     <div className="space-y-6">
@@ -134,7 +137,11 @@ export default async function BodegaFichaPage({ params }) {
                 </p>
               </div>
             </div>
-            <ManualBillingForm rentalId={rental.id} defaultAmount={rental.monthly_amount} />
+            <ManualBillingForm
+              rentalId={rental.id}
+              defaultAmount={rental.monthly_amount}
+              unbilledChargesTotal={unbilledChargesTotal}
+            />
           </div>
         ) : (
           <p className="text-sm text-text-muted">

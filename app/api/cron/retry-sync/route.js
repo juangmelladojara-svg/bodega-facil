@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { getPendingSyncPayments, syncAccessAfterPayment } from "@/lib/syncAccess";
 import { getWebpayTransactionStatus } from "@/lib/transbank";
 import { syncLateFeeInvoices } from "@/lib/invoices";
+import { releaseChargesForPayment } from "@/lib/charges";
 
 const STALE_PAYMENT_MS = 15 * 60 * 1000;
 
@@ -104,6 +105,7 @@ async function reconcileStalePayments() {
         .update({ status: "failed" })
         .eq("id", payment.id)
         .in("status", ["pending", "committing"]);
+      await releaseChargesForPayment(payment.id);
       results.push({ paymentId: payment.id, action: "marked_failed" });
     }
   }

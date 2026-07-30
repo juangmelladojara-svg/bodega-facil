@@ -194,13 +194,17 @@ create table if not exists warehouse_charges (
   status            text not null default 'pending' check (status in ('pending', 'confirmed', 'cancelled')),
   created_by        text,
   confirmed_at      timestamptz,
+  payment_id        uuid references payments(id) on delete set null, -- se setea al reservarlo para un cobro; null = todavía no facturado
   created_at        timestamptz not null default now()
 );
 
-comment on table warehouse_charges is 'Cargos adicionales por bodega (flete, consumo eléctrico a $300/unidad, etc.), pendientes de confirmar antes de facturarse.';
+comment on table warehouse_charges is 'Cargos adicionales por bodega (flete, consumo eléctrico a $300/unidad, etc.). Se suman a la mensualidad al cobrar; payment_id marca cuáles ya se facturaron.';
 
 create index if not exists warehouse_charges_warehouse_id_idx on warehouse_charges(warehouse_id);
 create index if not exists warehouse_charges_status_idx on warehouse_charges(status);
+-- cargos confirmados y todavía no facturados, por bodega (lookup del monto a cobrar)
+create index if not exists warehouse_charges_unbilled_idx on warehouse_charges(warehouse_id)
+  where status = 'confirmed' and payment_id is null;
 
 -- ─────────────────────────────────────────────────────────────────────────
 -- contracts — contrato generado desde una plantilla para un arriendo

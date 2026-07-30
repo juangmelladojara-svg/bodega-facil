@@ -4,20 +4,29 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus } from "lucide-react";
 
+const clp = new Intl.NumberFormat("es-CL", {
+  style: "currency",
+  currency: "CLP",
+  maximumFractionDigits: 0,
+});
+
+/** `rentals` viene con un `chargesTotal` calculado en el server (cargos confirmados aún no facturados de esa bodega). */
 export default function RegisterManualPaymentForm({ rentals }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [rentalId, setRentalId] = useState(rentals[0]?.id ?? "");
-  const [amount, setAmount] = useState(rentals[0]?.monthly_amount ?? "");
+  const [amount, setAmount] = useState((rentals[0]?.monthly_amount ?? 0) + (rentals[0]?.chargesTotal ?? 0));
   const [notes, setNotes] = useState("");
+
+  const selectedRental = rentals.find((item) => item.id === rentalId);
 
   function handleRentalChange(event) {
     const id = event.target.value;
     setRentalId(id);
     const rental = rentals.find((item) => item.id === id);
-    if (rental) setAmount(rental.monthly_amount);
+    if (rental) setAmount(rental.monthly_amount + (rental.chargesTotal ?? 0));
   }
 
   async function handleSubmit(event) {
@@ -86,6 +95,11 @@ export default function RegisterManualPaymentForm({ rentals }) {
           required
           className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-accent"
         />
+        {selectedRental?.chargesTotal > 0 && (
+          <p className="mt-1 text-xs text-warn">
+            Incluye {clp.format(selectedRental.chargesTotal)} en cargos pendientes.
+          </p>
+        )}
       </div>
       <div>
         <label className="mb-1.5 block text-sm text-text-muted">Notas (ej. &quot;efectivo&quot;)</label>

@@ -56,16 +56,41 @@ export async function POST(request) {
     return NextResponse.json({ error: "Error al buscar arriendos." }, { status: 500 });
   }
 
+  // Cargos confirmados y todavía no facturados, por bodega — se suman al
+  // monto a pagar. Defensivo: si la tabla no existe todavía, seguir sin cargos.
+  let chargesByWarehouse = new Map();
+  try {
+    const warehouseIds = (rentals ?? []).map((r) => r.warehouse_id);
+    if (warehouseIds.length > 0) {
+      const { data: charges } = await supabase
+        .from("warehouse_charges")
+        .select("warehouse_id, amount")
+        .in("warehouse_id", warehouseIds)
+        .eq("status", "confirmed")
+        .is("payment_id", null);
+      for (const c of charges ?? []) {
+        chargesByWarehouse.set(c.warehouse_id, (chargesByWarehouse.get(c.warehouse_id) ?? 0) + c.amount);
+      }
+    }
+  } catch {
+    chargesByWarehouse = new Map();
+  }
+
   const now = new Date();
-  const items = (rentals ?? []).map((rental) => ({
-    rentalId: rental.id,
-    warehouseCode: rental.warehouses?.code ?? null,
-    warehouseName: rental.warehouses?.name ?? null,
-    monthlyAmount: rental.monthly_amount,
-    status: rental.status,
-    validUntil: rental.valid_until,
-    isUpToDate: Boolean(rental.valid_until && new Date(rental.valid_until) > now),
-  }));
+  const items = (rentals ?? []).map((rental) => {
+    const chargesTotal = chargesByWarehouse.get(rental.warehouse_id) ?? 0;
+    return {
+      rentalId: rental.id,
+      warehouseCode: rental.warehouses?.code ?? null,
+      warehouseName: rental.warehouses?.name ?? null,
+      monthlyAmount: rental.monthly_amount,
+      chargesTotal,
+      totalDue: rental.monthly_amount + chargesTotal,
+      status: rental.status,
+      validUntil: rental.valid_until,
+      isUpToDate: Boolean(rental.valid_until && new Date(rental.valid_until) > now),
+    };
+  });
 
   return NextResponse.json({
     tenant: { fullName: tenant.full_name, rut: tenant.rut },

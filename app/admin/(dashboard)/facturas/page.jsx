@@ -84,6 +84,27 @@ export default async function FacturasPage({ searchParams }) {
   const invoiceByRentalId = new Map(invoices.filter((i) => i.status !== "paid").map((i) => [i.rental_id, i]));
   const rentalsWithoutInvoice = (overdueRentals ?? []).filter((r) => !invoiceByRentalId.has(r.id));
 
+  // Cargos confirmados y todavía no facturados, por bodega — se suman al
+  // monto sugerido del pago manual. Defensivo por si la migración de cargos
+  // todavía no corrió.
+  let chargesByWarehouseId = new Map();
+  try {
+    const { data: unbilledCharges } = await supabase
+      .from("warehouse_charges")
+      .select("warehouse_id, amount")
+      .eq("status", "confirmed")
+      .is("payment_id", null);
+    for (const c of unbilledCharges ?? []) {
+      chargesByWarehouseId.set(c.warehouse_id, (chargesByWarehouseId.get(c.warehouse_id) ?? 0) + c.amount);
+    }
+  } catch {
+    chargesByWarehouseId = new Map();
+  }
+  const rentalsWithCharges = (rentals ?? []).map((r) => ({
+    ...r,
+    chargesTotal: chargesByWarehouseId.get(r.warehouse_id) ?? 0,
+  }));
+
   const visiblePayments = (monthPayments ?? []).filter((p) => {
     if (filter === "todas" || filter === "vencidas") return filter !== "vencidas";
     const isVigente = p.period_end && p.period_end >= now.toISOString();
@@ -189,7 +210,7 @@ export default async function FacturasPage({ searchParams }) {
             </Link>
           </div>
 
-          <RegisterManualPaymentForm rentals={rentals ?? []} />
+          <RegisterManualPaymentForm rentals={rentalsWithCharges} />
 
           <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
             <table className="w-full text-left text-sm">

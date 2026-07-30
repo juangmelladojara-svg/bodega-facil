@@ -4,13 +4,19 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, ReceiptText } from "lucide-react";
 
-/** Botón de "facturación manual" en la ficha de bodega: registra un pago (Webpay o efectivo/transferencia) directo para este arriendo. */
-export default function ManualBillingForm({ rentalId, defaultAmount }) {
+const clp = new Intl.NumberFormat("es-CL", {
+  style: "currency",
+  currency: "CLP",
+  maximumFractionDigits: 0,
+});
+
+/** Botón de "facturación manual" en la ficha de bodega: registra un pago (Webpay o efectivo/transferencia) directo para este arriendo. El monto sugerido incluye cargos confirmados aún no facturados. */
+export default function ManualBillingForm({ rentalId, defaultAmount, unbilledChargesTotal = 0 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [amount, setAmount] = useState(defaultAmount);
+  const [amount, setAmount] = useState(defaultAmount + unbilledChargesTotal);
   const [notes, setNotes] = useState("");
 
   async function handleSubmit(event) {
@@ -49,6 +55,11 @@ export default function ManualBillingForm({ rentalId, defaultAmount }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-border bg-surface-2 p-4">
+      {unbilledChargesTotal > 0 && (
+        <p className="text-xs text-warn">
+          Incluye {clp.format(unbilledChargesTotal)} en cargos pendientes de esta bodega.
+        </p>
+      )}
       <div>
         <label className="mb-1.5 block text-sm text-text-muted">Monto (CLP)</label>
         <input
