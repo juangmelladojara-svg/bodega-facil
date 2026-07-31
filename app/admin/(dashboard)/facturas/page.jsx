@@ -59,13 +59,18 @@ export default async function FacturasPage({ searchParams }) {
       .gte("created_at", monthStart.toISOString())
       .lt("created_at", monthEnd.toISOString())
       .order("created_at", { ascending: false }),
-    supabase.from("rentals").select("*, tenants(full_name), warehouses(code)").order("created_at"),
+    supabase
+      .from("rentals")
+      .select("*, tenants(full_name), warehouses(code)")
+      .neq("status", "ended")
+      .order("created_at"),
     supabase
       .from("rentals")
       .select("id, monthly_amount, valid_until, tenants(full_name), warehouses(code)")
       .lt("valid_until", now.toISOString())
       .neq("status", "inactive")
-      .neq("status", "suspended"),
+      .neq("status", "suspended")
+      .neq("status", "ended"),
   ]);
 
   // Facturas de multa (tabla `invoices`) — defensivo por si la migración

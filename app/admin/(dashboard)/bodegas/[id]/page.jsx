@@ -5,6 +5,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import ContractPanel from "./ContractPanel";
 import NewChargeForm from "./NewChargeForm";
 import ManualBillingForm from "./ManualBillingForm";
+import EndRentalButton from "./EndRentalButton";
 
 const clp = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -30,6 +31,7 @@ export default async function BodegaFichaPage({ params }) {
     .from("rentals")
     .select("*, tenants(*)")
     .eq("warehouse_id", id)
+    .neq("status", "ended")
     .maybeSingle();
 
   const [{ data: payments }, { data: charges }] = await Promise.all([
@@ -137,11 +139,14 @@ export default async function BodegaFichaPage({ params }) {
                 </p>
               </div>
             </div>
-            <ManualBillingForm
-              rentalId={rental.id}
-              defaultAmount={rental.monthly_amount}
-              unbilledChargesTotal={unbilledChargesTotal}
-            />
+            <div className="flex flex-wrap gap-2">
+              <ManualBillingForm
+                rentalId={rental.id}
+                defaultAmount={rental.monthly_amount}
+                unbilledChargesTotal={unbilledChargesTotal}
+              />
+              <EndRentalButton rentalId={rental.id} />
+            </div>
           </div>
         ) : (
           <p className="text-sm text-text-muted">

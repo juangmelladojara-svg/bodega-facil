@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowUp, ArrowDown, ArrowUpDown, Search } from "lucide-react";
+import { isOccupied } from "@/lib/warehouses";
 
 const clp = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -42,8 +43,7 @@ export default function BodegasTable({ warehouses }) {
     () =>
       warehouses.map((w) => ({
         ...w,
-        // rentals viene embebido como objeto (relación 1-a-1, warehouse_id es unique)
-        occupied: Boolean(w.rentals),
+        occupied: isOccupied(w),
       })),
     [warehouses]
   );

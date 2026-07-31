@@ -6,7 +6,7 @@ export default async function BodegasPage() {
   const supabase = getSupabaseAdmin();
   const { data: warehouses } = await supabase
     .from("warehouses")
-    .select("*, rentals(id)")
+    .select("*, rentals(id, status)")
     .order("code");
 
   return (

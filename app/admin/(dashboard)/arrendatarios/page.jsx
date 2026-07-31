@@ -1,5 +1,6 @@
 import { CheckCircle2, AlertTriangle } from "lucide-react";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { isOccupied } from "@/lib/warehouses";
 import NewTenantForm from "./NewTenantForm";
 import AssignRentalForm from "./AssignRentalForm";
 import Pagination from "../Pagination";
@@ -25,15 +26,14 @@ export default async function ArrendatariosPage({ searchParams }) {
       .select("*, rentals(*, warehouses(code, name))")
       .order("full_name")
       .range(from, to),
-    supabase.from("warehouses").select("id, code, rentals(id)").order("code"),
+    supabase.from("warehouses").select("id, code, rentals(id, status)").order("code"),
   ]);
 
   const hasNextPage = (tenantsPage ?? []).length > PAGE_SIZE;
   const tenants = (tenantsPage ?? []).slice(0, PAGE_SIZE);
 
-  // rentals viene embebido como objeto (relación 1-a-1, warehouse_id es unique en rentals)
   const availableWarehouses = (warehouses ?? [])
-    .filter((warehouse) => !warehouse.rentals)
+    .filter((warehouse) => !isOccupied(warehouse))
     .map(({ id, code }) => ({ id, code }));
 
   const now = new Date().toISOString();
@@ -61,7 +61,9 @@ export default async function ArrendatariosPage({ searchParams }) {
             </div>
 
             <div className="mt-4 space-y-2">
-              {(tenant.rentals ?? []).map((rental) => {
+              {(tenant.rentals ?? [])
+                .filter((rental) => rental.status !== "ended")
+                .map((rental) => {
                 const isUpToDate = Boolean(rental.valid_until && rental.valid_until > now);
                 return (
                   <div
@@ -85,7 +87,7 @@ export default async function ArrendatariosPage({ searchParams }) {
                   </div>
                 );
               })}
-              {(tenant.rentals ?? []).length === 0 && (
+              {(tenant.rentals ?? []).filter((rental) => rental.status !== "ended").length === 0 && (
                 <p className="text-sm text-text-muted">Sin bodegas asignadas.</p>
               )}
 

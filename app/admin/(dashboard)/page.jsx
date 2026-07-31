@@ -14,6 +14,7 @@ import {
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { getPendingSyncPayments } from "@/lib/syncAccess";
 import { getPendingAuthorizationInvoices } from "@/lib/invoices";
+import { isOccupied } from "@/lib/warehouses";
 import { Meter, ProportionBar } from "./Bars";
 import RevenueTrendChart from "./RevenueTrendChart";
 
@@ -71,10 +72,11 @@ export default async function AdminDashboardPage() {
   ] = await Promise.all([
     supabase.from("warehouses").select("*", { count: "exact", head: true }),
     supabase.from("tenants").select("*", { count: "exact", head: true }),
-    supabase.from("warehouses").select("id, size_m3, rentals(id)"),
+    supabase.from("warehouses").select("id, size_m3, rentals(id, status)"),
     supabase
       .from("rentals")
-      .select("id, status, valid_until, monthly_amount, tenants(full_name), warehouses(code)"),
+      .select("id, status, valid_until, monthly_amount, tenants(full_name), warehouses(code)")
+      .neq("status", "ended"),
     supabase
       .from("payments")
       .select("id, amount, method, created_at, rentals(tenants(full_name), warehouses(code))")
@@ -113,9 +115,7 @@ export default async function AdminDashboardPage() {
     const bucket = sizeBucket(w.size_m3);
     if (!bucket) continue;
     buckets[bucket].total += 1;
-    // `rentals` viene embebido como objeto (no array): warehouse_id es
-    // `unique` en rentals, así que Supabase infiere la relación como 1-a-1.
-    if (w.rentals) buckets[bucket].occupied += 1;
+    if (isOccupied(w)) buckets[bucket].occupied += 1;
   }
 
   // ── Tendencia de ingresos (últimos N meses) ───────────────────────────

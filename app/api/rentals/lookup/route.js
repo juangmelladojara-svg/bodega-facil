@@ -50,7 +50,8 @@ export async function POST(request) {
   const { data: rentals, error: rentalsError } = await supabase
     .from("rentals")
     .select("*, warehouses(*)")
-    .eq("tenant_id", tenant.id);
+    .eq("tenant_id", tenant.id)
+    .neq("status", "ended");
 
   if (rentalsError) {
     return NextResponse.json({ error: "Error al buscar arriendos." }, { status: 500 });

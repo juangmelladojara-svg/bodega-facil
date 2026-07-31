@@ -49,14 +49,20 @@ create table if not exists rentals (
   controller_person_id  text,                   -- ID asignado por el DS-K2602T al hacer createPerson
   monthly_amount        integer not null check (monthly_amount > 0),
   status                text not null default 'inactive'
-                          check (status in ('inactive', 'active', 'overdue', 'suspended')),
+                          check (status in ('inactive', 'active', 'overdue', 'suspended', 'ended')),
   valid_until           timestamptz,            -- vigencia actual de la tarjeta en el controlador
+  ended_at              timestamptz,            -- cuándo se terminó el arriendo (liberó la bodega); null mientras está vigente
   created_at            timestamptz not null default now(),
-  updated_at            timestamptz not null default now(),
-  unique (warehouse_id) -- una bodega tiene un único arriendo vigente a la vez
+  updated_at            timestamptz not null default now()
 );
 
-comment on table rentals is 'Arriendo activo de una bodega: quién, qué tarjeta, hasta cuándo tiene acceso.';
+comment on table rentals is 'Arriendo de una bodega: quién, qué tarjeta, hasta cuándo tiene acceso. Una bodega puede acumular varios arriendos históricos (status=ended); solo uno no-terminado a la vez.';
+
+-- Unicidad parcial: como máximo un arriendo NO terminado por bodega. Permite
+-- conservar el historial de arriendos anteriores (pagos/cargos/contrato)
+-- después de liberar la bodega para un nuevo arrendatario.
+create unique index if not exists rentals_warehouse_active_idx
+  on rentals(warehouse_id) where status <> 'ended';
 
 create index if not exists rentals_tenant_id_idx on rentals(tenant_id);
 create index if not exists rentals_status_idx on rentals(status);

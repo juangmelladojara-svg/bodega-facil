@@ -25,6 +25,7 @@ export default async function AccesoPage({ searchParams }) {
     supabase
       .from("rentals")
       .select("*, tenants(full_name, rut), warehouses(code, gate_id)")
+      .neq("status", "ended")
       .order("created_at", { ascending: false })
       .range(from, to),
     supabase
