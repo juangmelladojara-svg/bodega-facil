@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, AlertTriangle, Ban } from "lucide-react";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { computeFirstPaymentAmount } from "@/lib/computeValidUntil";
+import { formatRutDisplay } from "@/lib/rut";
 import ContractPanel from "./ContractPanel";
 import NewChargeForm from "./NewChargeForm";
 import ManualBillingForm from "./ManualBillingForm";
@@ -135,7 +136,7 @@ export default async function BodegaFichaPage({ params }) {
               </div>
               <div>
                 <p className="text-xs text-text-muted">RUT</p>
-                <p className="font-mono text-text">{rental.tenants?.rut}</p>
+                <p className="font-mono text-text">{formatRutDisplay(rental.tenants?.rut)}</p>
               </div>
               <div>
                 <p className="text-xs text-text-muted">Vigencia</p>
@@ -196,11 +197,11 @@ export default async function BodegaFichaPage({ params }) {
               <div className="rounded-lg border border-border bg-surface-2 p-3">
                 <p className="mb-2 text-xs font-medium text-text-muted">Empresa</p>
                 <div className="grid gap-2 text-sm sm:grid-cols-2">
-                  <p className="text-text">{tenantCompany.razon_social} — {tenantCompany.company_rut}</p>
+                  <p className="text-text">{tenantCompany.razon_social} — {formatRutDisplay(tenantCompany.company_rut)}</p>
                   <p className="text-text-muted">{tenantCompany.giro ?? "—"}</p>
                   <p className="text-text-muted sm:col-span-2">{tenantCompany.company_address ?? "—"}</p>
                   <p className="text-text-muted sm:col-span-2">
-                    Representante: {tenantCompany.legal_rep_name} — {tenantCompany.legal_rep_rut}
+                    Representante: {tenantCompany.legal_rep_name} — {formatRutDisplay(tenantCompany.legal_rep_rut)}
                   </p>
                 </div>
               </div>

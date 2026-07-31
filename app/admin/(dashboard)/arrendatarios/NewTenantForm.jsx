@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus } from "lucide-react";
+import { formatRutInput } from "@/lib/rut";
 
 export default function NewTenantForm() {
   const router = useRouter();
@@ -13,6 +14,9 @@ export default function NewTenantForm() {
 
   function update(field) {
     return (event) => setForm((prev) => ({ ...prev, [field]: event.target.value }));
+  }
+  function updateRut() {
+    return (event) => setForm((prev) => ({ ...prev, rut: formatRutInput(event.target.value) }));
   }
 
   async function handleSubmit(event) {
@@ -56,7 +60,7 @@ export default function NewTenantForm() {
       onSubmit={handleSubmit}
       className="grid gap-3 rounded-2xl border border-border bg-surface p-5 sm:grid-cols-2"
     >
-      <Field label="RUT" value={form.rut} onChange={update("rut")} placeholder="12.345.678-9" required />
+      <Field label="RUT" value={form.rut} onChange={updateRut()} placeholder="12.345.678-9" required />
       <Field label="Nombre completo" value={form.fullName} onChange={update("fullName")} required />
       <Field label="Teléfono" value={form.phone} onChange={update("phone")} placeholder="+56 9 ..." />
       <Field label="Email" type="email" value={form.email} onChange={update("email")} />

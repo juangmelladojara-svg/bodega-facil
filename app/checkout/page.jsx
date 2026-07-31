@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Search, Loader2, CreditCard, CheckCircle2, AlertTriangle, Warehouse } from "lucide-react";
-import { isValidRut } from "@/lib/rut";
+import { isValidRut, formatRutInput } from "@/lib/rut";
 
 const clp = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -112,7 +112,7 @@ export default function CheckoutPage() {
               placeholder="12.345.678-9"
               aria-label="RUT"
               value={rut}
-              onChange={(event) => setRut(event.target.value)}
+              onChange={(event) => setRut(formatRutInput(event.target.value))}
               className="flex-1 rounded-lg border border-border bg-surface-2 px-4 py-3 text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
               required
             />

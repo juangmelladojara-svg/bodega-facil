@@ -114,11 +114,11 @@ export async function POST(request) {
       .upsert(
         {
           tenant_id: tenant.id,
-          company_rut: company.companyRut,
+          company_rut: formatRut(company.companyRut),
           razon_social: company.razonSocial,
           giro: company.giro || null,
           company_address: company.companyAddress || null,
-          legal_rep_rut: company.legalRepRut,
+          legal_rep_rut: formatRut(company.legalRepRut),
           legal_rep_name: company.legalRepName,
           company_email: company.companyEmail || null,
         },

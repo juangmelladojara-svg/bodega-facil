@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, FileText, Upload, Check, ArrowRight } from "lucide-react";
+import { formatRutInput } from "@/lib/rut";
 
 const EMPTY_COMPANY = {
   companyRut: "",
@@ -46,8 +47,14 @@ export default function NewRentalForm({ warehouseId, defaultAmount }) {
   function update(field) {
     return (event) => setForm((prev) => ({ ...prev, [field]: event.target.value }));
   }
+  function updateRut(field) {
+    return (event) => setForm((prev) => ({ ...prev, [field]: formatRutInput(event.target.value) }));
+  }
   function updateCompany(field) {
     return (event) => setCompany((prev) => ({ ...prev, [field]: event.target.value }));
+  }
+  function updateCompanyRut(field) {
+    return (event) => setCompany((prev) => ({ ...prev, [field]: formatRutInput(event.target.value) }));
   }
 
   async function handleSubmit(event) {
@@ -146,7 +153,7 @@ export default function NewRentalForm({ warehouseId, defaultAmount }) {
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="RUT" value={form.rut} onChange={update("rut")} placeholder="12.345.678-9" required />
+        <Field label="RUT" value={form.rut} onChange={updateRut("rut")} placeholder="12.345.678-9" required />
         <Field label="Nombre completo" value={form.fullName} onChange={update("fullName")} required />
         <Field
           label="Teléfono (WhatsApp de contacto)"
@@ -190,14 +197,14 @@ export default function NewRentalForm({ warehouseId, defaultAmount }) {
 
       {isCompany && (
         <div className="grid gap-3 rounded-lg border border-border bg-surface-2 p-3 sm:grid-cols-2">
-          <Field label="RUT empresa" value={company.companyRut} onChange={updateCompany("companyRut")} required />
+          <Field label="RUT empresa" value={company.companyRut} onChange={updateCompanyRut("companyRut")} required />
           <Field label="Razón social" value={company.razonSocial} onChange={updateCompany("razonSocial")} required />
           <Field label="Giro" value={company.giro} onChange={updateCompany("giro")} />
           <Field label="Dirección empresa" value={company.companyAddress} onChange={updateCompany("companyAddress")} />
           <Field
             label="RUT representante legal"
             value={company.legalRepRut}
-            onChange={updateCompany("legalRepRut")}
+            onChange={updateCompanyRut("legalRepRut")}
             required
           />
           <Field

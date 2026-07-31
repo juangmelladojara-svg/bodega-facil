@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { normalizeRut, formatRut, isValidRut } from "../lib/rut.js";
+import { normalizeRut, formatRut, formatRutDisplay, formatRutInput, isValidRut } from "../lib/rut.js";
 
 test("normalizeRut quita puntos, guión y pasa a mayúsculas", () => {
   assert.equal(normalizeRut("12.345.678-5"), "123456785");
@@ -35,4 +35,20 @@ test("isValidRut rechaza formatos claramente inválidos", () => {
   assert.equal(isValidRut("123"), false);
   assert.equal(isValidRut(null), false);
   assert.equal(isValidRut(undefined), false);
+});
+
+test("formatRutDisplay agrega puntos de miles y guión (xx.xxx.xxx-x)", () => {
+  assert.equal(formatRutDisplay("123456785"), "12.345.678-5");
+  assert.equal(formatRutDisplay("12.345.678-5"), "12.345.678-5");
+  assert.equal(formatRutDisplay("40000000-K"), "40.000.000-K");
+  assert.equal(formatRutDisplay(""), "");
+});
+
+test("formatRutInput formatea progresivamente mientras se escribe", () => {
+  assert.equal(formatRutInput("1"), "1");
+  assert.equal(formatRutInput("12"), "1-2");
+  assert.equal(formatRutInput("12345678"), "1.234.567-8");
+  assert.equal(formatRutInput("123456785"), "12.345.678-5");
+  assert.equal(formatRutInput("12345678k"), "12.345.678-K");
+  assert.equal(formatRutInput("12.345.678-5"), "12.345.678-5");
 });

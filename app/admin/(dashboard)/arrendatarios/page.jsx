@@ -1,6 +1,7 @@
 import { CheckCircle2, AlertTriangle } from "lucide-react";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isOccupied } from "@/lib/warehouses";
+import { formatRutDisplay } from "@/lib/rut";
 import NewTenantForm from "./NewTenantForm";
 import AssignRentalForm from "./AssignRentalForm";
 import Pagination from "../Pagination";
@@ -51,7 +52,7 @@ export default async function ArrendatariosPage({ searchParams }) {
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div>
                 <p className="font-medium text-text">{tenant.full_name}</p>
-                <p className="font-mono text-sm text-text-muted">{tenant.rut}</p>
+                <p className="font-mono text-sm text-text-muted">{formatRutDisplay(tenant.rut)}</p>
               </div>
               <p className="text-sm text-text-muted">
                 {tenant.phone && <span>{tenant.phone}</span>}
