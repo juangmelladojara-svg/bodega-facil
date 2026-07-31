@@ -18,29 +18,40 @@ const clp = new Intl.NumberFormat("es-CL", {
 export default async function ArrendatariosPage({ searchParams }) {
   const params = await searchParams;
   const page = Math.max(1, Number(params?.page) || 1);
-  const from = (page - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE;
   const q = (params?.q ?? "").trim();
 
   const supabase = getSupabaseAdmin();
 
-  let tenantsQuery = supabase
-    .from("tenants")
-    .select("*, rentals(*, warehouses(code, name))")
-    .order("full_name")
-    .range(from, to);
+  let tenantsQuery = supabase.from("tenants").select("*, rentals(*, warehouses(code, name))").order("full_name");
   if (q) tenantsQuery = tenantsQuery.ilike("full_name", `%${q}%`);
 
   const now = new Date().toISOString();
 
-  const [{ data: tenantsPage }, { data: warehouses }, { data: overdueRentalsForToast }] = await Promise.all([
+  const [{ data: allTenants }, { data: warehouses }, { data: overdueRentalsForToast }] = await Promise.all([
     tenantsQuery,
     supabase.from("warehouses").select("id, code, rentals(id, status)").order("code"),
     supabase.from("rentals").select("tenant_id").neq("status", "ended").not("valid_until", "is", null).lt("valid_until", now),
   ]);
 
-  const hasNextPage = (tenantsPage ?? []).length > PAGE_SIZE;
-  const tenants = (tenantsPage ?? []).slice(0, PAGE_SIZE);
+  // Vencidos primero: se ordena en JS (no en la query) porque depende de la
+  // relación embebida rentals, que Postgres/PostgREST no puede usar como
+  // criterio de order directamente.
+  const sortedTenants = [...(allTenants ?? [])]
+    .map((tenant) => ({
+      tenant,
+      hasOverdue: (tenant.rentals ?? []).some(
+        (rental) => rental.status !== "ended" && rental.valid_until && rental.valid_until <= now
+      ),
+    }))
+    .sort((a, b) => {
+      if (a.hasOverdue !== b.hasOverdue) return a.hasOverdue ? -1 : 1;
+      return a.tenant.full_name.localeCompare(b.tenant.full_name, "es");
+    })
+    .map(({ tenant }) => tenant);
+
+  const from = (page - 1) * PAGE_SIZE;
+  const tenants = sortedTenants.slice(from, from + PAGE_SIZE);
+  const hasNextPage = sortedTenants.length > from + PAGE_SIZE;
 
   const availableWarehouses = (warehouses ?? [])
     .filter((warehouse) => !isOccupied(warehouse))

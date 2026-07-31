@@ -198,11 +198,14 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-surface p-5">
+        <Link
+          href="/admin/facturas"
+          className="rounded-2xl border border-border bg-surface p-5 transition hover:border-accent"
+        >
           <Wallet className="size-5 text-ok" />
           <p className="mt-3 text-2xl font-semibold text-text">{clpCompact.format(monthlyRevenue)}</p>
           <p className="text-sm text-text-muted">Ingreso mensual vigente</p>
-        </div>
+        </Link>
 
         <Link
           href="/admin/acceso"
