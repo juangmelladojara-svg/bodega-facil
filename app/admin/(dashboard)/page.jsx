@@ -293,8 +293,8 @@ export default async function AdminDashboardPage() {
           <h2 className="mb-4 text-sm font-medium text-text-muted">Pagos · últimos {RECENT_DAYS} días</h2>
           <ProportionBar
             segments={[
-              { label: "Webpay", value: webpayCount, color: "#3987e5", icon: CreditCard },
-              { label: "Manual", value: manualCount, color: "#d95926", icon: Banknote },
+              { label: "Webpay", value: webpayCount, color: "var(--color-accent-2)", icon: CreditCard },
+              { label: "Manual", value: manualCount, color: "var(--color-warn)", icon: Banknote },
             ]}
           />
         </div>
