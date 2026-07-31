@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, FileText, Upload, Check, ArrowRight } from "lucide-react";
 import { formatRutInput } from "@/lib/rut";
+import { formatPhoneInput, isValidPhone } from "@/lib/phone";
+import { isValidEmail } from "@/lib/email";
 
 const EMPTY_COMPANY = {
   companyRut: "",
@@ -33,7 +35,7 @@ export default function NewRentalForm({ warehouseId, defaultAmount }) {
   const [form, setForm] = useState({
     rut: "",
     fullName: "",
-    phone: "",
+    phone: "+569",
     email: "",
     referenceAddress: "",
     monthlyAmount: defaultAmount,
@@ -50,6 +52,9 @@ export default function NewRentalForm({ warehouseId, defaultAmount }) {
   function updateRut(field) {
     return (event) => setForm((prev) => ({ ...prev, [field]: formatRutInput(event.target.value) }));
   }
+  function updatePhone() {
+    return (event) => setForm((prev) => ({ ...prev, phone: formatPhoneInput(event.target.value) }));
+  }
   function updateCompany(field) {
     return (event) => setCompany((prev) => ({ ...prev, [field]: event.target.value }));
   }
@@ -59,8 +64,22 @@ export default function NewRentalForm({ warehouseId, defaultAmount }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setLoading(true);
     setError("");
+
+    if (!isValidPhone(form.phone)) {
+      setError("El teléfono debe tener el formato +569 xxxx xxxx.");
+      return;
+    }
+    if (!isValidEmail(form.email)) {
+      setError("El email debe contener un @.");
+      return;
+    }
+    if (isCompany && !isValidEmail(company.companyEmail)) {
+      setError("El mail de la empresa debe contener un @.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await fetch("/api/admin/rentals", {
@@ -158,8 +177,8 @@ export default function NewRentalForm({ warehouseId, defaultAmount }) {
         <Field
           label="Teléfono (WhatsApp de contacto)"
           value={form.phone}
-          onChange={update("phone")}
-          placeholder="+56 9 ..."
+          onChange={updatePhone()}
+          placeholder="+569 xxxx xxxx"
         />
         <Field label="Email" type="email" value={form.email} onChange={update("email")} />
         <Field

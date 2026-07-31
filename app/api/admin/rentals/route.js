@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/adminAuth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { formatRut, isValidRut } from "@/lib/rut";
+import { isValidPhone } from "@/lib/phone";
+import { isValidEmail } from "@/lib/email";
 import { generateContractContent } from "@/lib/contractTemplate";
 
 /**
@@ -44,6 +46,15 @@ export async function POST(request) {
   }
   if (!tenantId && (!rut || !isValidRut(rut) || !fullName)) {
     return NextResponse.json({ error: "Falta tenantId, o RUT válido y nombre del arrendatario." }, { status: 400 });
+  }
+  if (!isValidPhone(phone)) {
+    return NextResponse.json({ error: "El teléfono debe tener el formato +569 xxxx xxxx." }, { status: 400 });
+  }
+  if (!isValidEmail(email)) {
+    return NextResponse.json({ error: "El email debe contener un @." }, { status: 400 });
+  }
+  if (company && !isValidEmail(company.companyEmail)) {
+    return NextResponse.json({ error: "El mail de la empresa debe contener un @." }, { status: 400 });
   }
   if (monthlyAmount !== undefined && monthlyAmount !== null && !(Number(monthlyAmount) > 0)) {
     return NextResponse.json({ error: "El monto mensual debe ser mayor que 0." }, { status: 400 });

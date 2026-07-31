@@ -4,13 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus } from "lucide-react";
 import { formatRutInput } from "@/lib/rut";
+import { formatPhoneInput, isValidPhone } from "@/lib/phone";
+import { isValidEmail } from "@/lib/email";
 
 export default function NewTenantForm() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({ rut: "", fullName: "", phone: "", email: "" });
+  const [form, setForm] = useState({ rut: "", fullName: "", phone: "+569", email: "" });
 
   function update(field) {
     return (event) => setForm((prev) => ({ ...prev, [field]: event.target.value }));
@@ -18,11 +20,24 @@ export default function NewTenantForm() {
   function updateRut() {
     return (event) => setForm((prev) => ({ ...prev, rut: formatRutInput(event.target.value) }));
   }
+  function updatePhone() {
+    return (event) => setForm((prev) => ({ ...prev, phone: formatPhoneInput(event.target.value) }));
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setLoading(true);
     setError("");
+
+    if (!isValidPhone(form.phone)) {
+      setError("El teléfono debe tener el formato +569 xxxx xxxx.");
+      return;
+    }
+    if (!isValidEmail(form.email)) {
+      setError("El email debe contener un @.");
+      return;
+    }
+
+    setLoading(true);
 
     const response = await fetch("/api/admin/tenants", {
       method: "POST",
@@ -37,7 +52,7 @@ export default function NewTenantForm() {
       return;
     }
 
-    setForm({ rut: "", fullName: "", phone: "", email: "" });
+    setForm({ rut: "", fullName: "", phone: "+569", email: "" });
     setLoading(false);
     setOpen(false);
     router.refresh();
@@ -62,7 +77,7 @@ export default function NewTenantForm() {
     >
       <Field label="RUT" value={form.rut} onChange={updateRut()} placeholder="12.345.678-9" required />
       <Field label="Nombre completo" value={form.fullName} onChange={update("fullName")} required />
-      <Field label="Teléfono" value={form.phone} onChange={update("phone")} placeholder="+56 9 ..." />
+      <Field label="Teléfono" value={form.phone} onChange={updatePhone()} placeholder="+569 xxxx xxxx" />
       <Field label="Email" type="email" value={form.email} onChange={update("email")} />
 
       {error && <p className="text-sm text-danger sm:col-span-2">{error}</p>}

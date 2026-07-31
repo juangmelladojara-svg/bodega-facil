@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/adminAuth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { formatRut, isValidRut } from "@/lib/rut";
+import { isValidPhone } from "@/lib/phone";
+import { isValidEmail } from "@/lib/email";
 
 export async function GET() {
   const admin = await getAdminUser();
@@ -27,6 +29,12 @@ export async function POST(request) {
 
   if (!rut || !isValidRut(rut) || !fullName) {
     return NextResponse.json({ error: "RUT inválido o falta el nombre." }, { status: 400 });
+  }
+  if (!isValidPhone(phone)) {
+    return NextResponse.json({ error: "El teléfono debe tener el formato +569 xxxx xxxx." }, { status: 400 });
+  }
+  if (!isValidEmail(email)) {
+    return NextResponse.json({ error: "El email debe contener un @." }, { status: 400 });
   }
 
   const supabase = getSupabaseAdmin();
