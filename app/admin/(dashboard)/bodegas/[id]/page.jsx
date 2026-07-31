@@ -154,16 +154,6 @@ export default async function BodegaFichaPage({ params }) {
         )}
       </div>
 
-      {/* Contrato */}
-      <div className="rounded-2xl border border-border bg-surface p-5">
-        <h2 className="mb-3 text-sm font-medium text-text-muted">Contrato</h2>
-        {rental ? (
-          <ContractPanel rentalId={rental.id} contract={contract} />
-        ) : (
-          <p className="text-sm text-text-muted">Asigna un arrendatario primero para generar el contrato.</p>
-        )}
-      </div>
-
       {/* Cargos */}
       <div className="rounded-2xl border border-border bg-surface p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -211,6 +201,16 @@ export default async function BodegaFichaPage({ params }) {
               </li>
             ))}
           </ul>
+        )}
+      </div>
+
+      {/* Contrato */}
+      <div className="rounded-2xl border border-border bg-surface p-5">
+        <h2 className="mb-3 text-sm font-medium text-text-muted">Contrato</h2>
+        {rental ? (
+          <ContractPanel rentalId={rental.id} contract={contract} />
+        ) : (
+          <p className="text-sm text-text-muted">Asigna un arrendatario primero para generar el contrato.</p>
         )}
       </div>
     </div>
