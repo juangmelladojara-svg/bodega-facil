@@ -41,6 +41,12 @@ export async function POST(request) {
       { status: 403 }
     );
   }
+  if (rental.status === "ended") {
+    return NextResponse.json(
+      { error: "Este arriendo ya terminó. Contáctanos si crees que esto es un error." },
+      { status: 403 }
+    );
+  }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
 

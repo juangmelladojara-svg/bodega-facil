@@ -274,6 +274,7 @@ create trigger contracts_set_updated_at
 alter table invoices enable row level security;
 alter table warehouse_charges enable row level security;
 alter table contracts enable row level security;
+alter table tenant_companies enable row level security;
 
 -- Storage — bucket privado para los PDF de contratos firmados. Se sirve
 -- siempre vía URL firmada generada por el backend con service_role.

@@ -27,7 +27,7 @@ const EMPTY_COMPANY = {
  */
 export default function NewRentalForm({ warehouseId, defaultAmount }) {
   const router = useRouter();
-  const [step, setStep] = useState("form"); // "form" | "photos" | "done"
+  const [step, setStep] = useState("form"); // "form" | "photos"
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [tenantId, setTenantId] = useState(null);
@@ -43,7 +43,6 @@ export default function NewRentalForm({ warehouseId, defaultAmount }) {
     rentalTerm: "mensual",
   });
   const [company, setCompany] = useState(EMPTY_COMPANY);
-  const [photos, setPhotos] = useState({ front: null, back: null });
   const [photoStatus, setPhotoStatus] = useState({ front: "idle", back: "idle" }); // idle|uploading|done|error
 
   function update(field) {
@@ -139,18 +138,12 @@ export default function NewRentalForm({ warehouseId, defaultAmount }) {
           <PhotoField
             label="Cédula — anverso"
             status={photoStatus.front}
-            onChange={(file) => {
-              setPhotos((prev) => ({ ...prev, front: file }));
-              handlePhotoUpload("front", file);
-            }}
+            onChange={(file) => handlePhotoUpload("front", file)}
           />
           <PhotoField
             label="Cédula — reverso"
             status={photoStatus.back}
-            onChange={(file) => {
-              setPhotos((prev) => ({ ...prev, back: file }));
-              handlePhotoUpload("back", file);
-            }}
+            onChange={(file) => handlePhotoUpload("back", file)}
           />
         </div>
         <button

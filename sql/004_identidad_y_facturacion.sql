@@ -29,6 +29,8 @@ create table if not exists tenant_companies (
 
 comment on table tenant_companies is 'Datos de empresa cuando el arrendatario arrienda a nombre de una empresa (rut, razón social, giro, representante legal).';
 
+alter table tenant_companies enable row level security;
+
 alter table rentals add column if not exists rental_term text not null default 'mensual'
   check (rental_term in ('mensual', 'diario'));
 

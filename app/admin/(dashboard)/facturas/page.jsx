@@ -74,20 +74,24 @@ export default async function FacturasPage({ searchParams }) {
       .neq("status", "ended"),
   ]);
 
-  // Facturas de multa (tabla `invoices`) — defensivo por si la migración
-  // todavía no corrió.
+  // Facturas de multa (tabla `invoices`) — solo las que necesitan revisión
+  // (pending_authorization/authorized); las ya pagadas no aportan nada en
+  // esta pestaña y quedarían acumulándose para siempre. El historial de
+  // multas pagadas sigue visible en la vista mensual normal (son pagos
+  // "Manual" con nota "Factura de multa: ..."). Defensivo por si la
+  // migración todavía no corrió.
   let invoices = [];
   try {
     const { data } = await supabase
       .from("invoices")
       .select("*, rentals(*, tenants(full_name), warehouses(code))")
-      .in("status", ["pending_authorization", "authorized", "paid"])
+      .in("status", ["pending_authorization", "authorized"])
       .order("created_at", { ascending: false });
     invoices = data ?? [];
   } catch {
     invoices = [];
   }
-  const invoiceByRentalId = new Map(invoices.filter((i) => i.status !== "paid").map((i) => [i.rental_id, i]));
+  const invoiceByRentalId = new Map(invoices.map((i) => [i.rental_id, i]));
   const rentalsWithoutInvoice = (overdueRentals ?? []).filter((r) => !invoiceByRentalId.has(r.id));
 
   // Cargos confirmados y todavía no facturados, por bodega — se suman al
