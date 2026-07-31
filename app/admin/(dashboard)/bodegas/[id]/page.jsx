@@ -6,6 +6,7 @@ import ContractPanel from "./ContractPanel";
 import NewChargeForm from "./NewChargeForm";
 import ManualBillingForm from "./ManualBillingForm";
 import EndRentalButton from "./EndRentalButton";
+import NewRentalForm from "./NewRentalForm";
 
 const clp = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -149,13 +150,7 @@ export default async function BodegaFichaPage({ params }) {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-text-muted">
-            Sin arrendatario asignado.{" "}
-            <Link href="/admin/arrendatarios" className="text-accent-2 hover:underline">
-              Asignar desde Arrendatarios
-            </Link>
-            .
-          </p>
+          <NewRentalForm warehouseId={warehouse.id} defaultAmount={warehouse.monthly_amount} />
         )}
       </div>
 
