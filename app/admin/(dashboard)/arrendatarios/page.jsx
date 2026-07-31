@@ -1,9 +1,10 @@
-import { CheckCircle2, AlertTriangle } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Search } from "lucide-react";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isOccupied } from "@/lib/warehouses";
 import { formatRutDisplay } from "@/lib/rut";
 import NewTenantForm from "./NewTenantForm";
 import AssignRentalForm from "./AssignRentalForm";
+import OverdueToast from "./OverdueToast";
 import Pagination from "../Pagination";
 
 const PAGE_SIZE = 25;
@@ -19,15 +20,23 @@ export default async function ArrendatariosPage({ searchParams }) {
   const page = Math.max(1, Number(params?.page) || 1);
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE;
+  const q = (params?.q ?? "").trim();
 
   const supabase = getSupabaseAdmin();
-  const [{ data: tenantsPage }, { data: warehouses }] = await Promise.all([
-    supabase
-      .from("tenants")
-      .select("*, rentals(*, warehouses(code, name))")
-      .order("full_name")
-      .range(from, to),
+
+  let tenantsQuery = supabase
+    .from("tenants")
+    .select("*, rentals(*, warehouses(code, name))")
+    .order("full_name")
+    .range(from, to);
+  if (q) tenantsQuery = tenantsQuery.ilike("full_name", `%${q}%`);
+
+  const now = new Date().toISOString();
+
+  const [{ data: tenantsPage }, { data: warehouses }, { data: overdueRentalsForToast }] = await Promise.all([
+    tenantsQuery,
     supabase.from("warehouses").select("id, code, rentals(id, status)").order("code"),
+    supabase.from("rentals").select("tenant_id").neq("status", "ended").not("valid_until", "is", null).lt("valid_until", now),
   ]);
 
   const hasNextPage = (tenantsPage ?? []).length > PAGE_SIZE;
@@ -37,18 +46,37 @@ export default async function ArrendatariosPage({ searchParams }) {
     .filter((warehouse) => !isOccupied(warehouse))
     .map(({ id, code }) => ({ id, code }));
 
-  const now = new Date().toISOString();
+  const overdueTenantsCount = new Set((overdueRentalsForToast ?? []).map((r) => r.tenant_id)).size;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-text">Arrendatarios</h1>
         <NewTenantForm />
       </div>
 
+      <form action="/admin/arrendatarios" method="GET" className="relative max-w-sm">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-muted" />
+        <input
+          type="text"
+          name="q"
+          defaultValue={q}
+          placeholder="Buscar por nombre..."
+          className="w-full rounded-lg border border-border bg-surface-2 py-2 pl-9 pr-3 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </form>
+
       <div className="space-y-3">
-        {tenants.map((tenant) => (
-          <div key={tenant.id} className="rounded-2xl border border-border bg-surface p-5">
+        {tenants.map((tenant) => {
+          const activeRentals = (tenant.rentals ?? []).filter((rental) => rental.status !== "ended");
+          const hasOverdue = activeRentals.some((rental) => rental.valid_until && rental.valid_until <= now);
+          return (
+          <div
+            key={tenant.id}
+            className={`rounded-2xl border p-5 ${
+              hasOverdue ? "border-danger/50 bg-danger/5" : "border-border bg-surface"
+            }`}
+          >
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div>
                 <p className="font-medium text-text">{tenant.full_name}</p>
@@ -62,9 +90,7 @@ export default async function ArrendatariosPage({ searchParams }) {
             </div>
 
             <div className="mt-4 space-y-2">
-              {(tenant.rentals ?? [])
-                .filter((rental) => rental.status !== "ended")
-                .map((rental) => {
+              {activeRentals.map((rental) => {
                 const isUpToDate = Boolean(rental.valid_until && rental.valid_until > now);
                 return (
                   <div
@@ -88,23 +114,26 @@ export default async function ArrendatariosPage({ searchParams }) {
                   </div>
                 );
               })}
-              {(tenant.rentals ?? []).filter((rental) => rental.status !== "ended").length === 0 && (
+              {activeRentals.length === 0 && (
                 <p className="text-sm text-text-muted">Sin bodegas asignadas.</p>
               )}
 
               <AssignRentalForm tenantId={tenant.id} availableWarehouses={availableWarehouses} />
             </div>
           </div>
-        ))}
+          );
+        })}
 
         {tenants.length === 0 && (
           <p className="rounded-2xl border border-border bg-surface p-8 text-center text-text-muted">
-            No hay arrendatarios registrados todavía.
+            {q ? `Ningún arrendatario coincide con "${q}".` : "No hay arrendatarios registrados todavía."}
           </p>
         )}
       </div>
 
-      <Pagination page={page} hasNextPage={hasNextPage} basePath="/admin/arrendatarios" />
+      <Pagination page={page} hasNextPage={hasNextPage} basePath="/admin/arrendatarios" extraParams={{ q }} />
+
+      <OverdueToast count={overdueTenantsCount} />
     </div>
   );
 }

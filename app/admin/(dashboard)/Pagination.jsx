@@ -1,13 +1,20 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-export default function Pagination({ page, hasNextPage, basePath }) {
+export default function Pagination({ page, hasNextPage, basePath, extraParams }) {
   if (page === 1 && !hasNextPage) return null;
+
+  const extra = extraParams
+    ? Object.entries(extraParams)
+        .filter(([, value]) => value)
+        .map(([key, value]) => `&${key}=${encodeURIComponent(value)}`)
+        .join("")
+    : "";
 
   return (
     <div className="flex items-center justify-between text-sm text-text-muted">
       <Link
-        href={`${basePath}?page=${page - 1}`}
+        href={`${basePath}?page=${page - 1}${extra}`}
         className={`flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 ${
           page <= 1 ? "pointer-events-none opacity-40" : "hover:text-text"
         }`}
@@ -17,7 +24,7 @@ export default function Pagination({ page, hasNextPage, basePath }) {
       </Link>
       <span>Página {page}</span>
       <Link
-        href={`${basePath}?page=${page + 1}`}
+        href={`${basePath}?page=${page + 1}${extra}`}
         className={`flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 ${
           !hasNextPage ? "pointer-events-none opacity-40" : "hover:text-text"
         }`}
