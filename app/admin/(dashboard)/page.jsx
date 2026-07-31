@@ -6,12 +6,9 @@ import {
   ShieldAlert,
   Clock,
   CalendarClock,
-  Activity,
   CreditCard,
   Banknote,
   ArrowRight,
-  ReceiptText,
-  KeyRound,
   AlertTriangle,
 } from "lucide-react";
 import { getSupabaseAdmin } from "@/lib/supabase";
@@ -38,7 +35,6 @@ const MONTH_LABELS = [
 const REVENUE_MONTHS = 6;
 const RECENT_DAYS = 30;
 const UPCOMING_DAYS = 7;
-const ACTIVITY_LIMIT = 8;
 
 function monthKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
@@ -70,7 +66,6 @@ export default async function AdminDashboardPage() {
     { data: warehousesWithOccupancy },
     { data: rentals },
     { data: recentPayments },
-    { data: recentLogs },
     pendingSyncPayments,
     pendingAuthInvoices,
   ] = await Promise.all([
@@ -86,11 +81,6 @@ export default async function AdminDashboardPage() {
       .eq("status", "confirmed")
       .gte("created_at", revenueSince.toISOString())
       .order("created_at", { ascending: false }),
-    supabase
-      .from("access_control_log")
-      .select("id, action, success, created_at, rentals(warehouses(code))")
-      .order("created_at", { ascending: false })
-      .limit(6),
     getPendingSyncPayments(),
     // defensivo: si la tabla `invoices` todavía no existe (migración no
     // corrida), el dashboard no debe caerse entero por esto.
@@ -152,26 +142,6 @@ export default async function AdminDashboardPage() {
   const last30dPayments = (recentPayments ?? []).filter((p) => new Date(p.created_at) >= recentCutoff);
   const webpayCount = last30dPayments.filter((p) => p.method === "webpay").length;
   const manualCount = last30dPayments.filter((p) => p.method === "manual").length;
-
-  // ── Actividad reciente (pagos + eventos de acceso, mezclados) ─────────
-  const activity = [
-    ...(recentPayments ?? []).slice(0, ACTIVITY_LIMIT).map((p) => ({
-      type: "payment",
-      id: `payment-${p.id}`,
-      createdAt: p.created_at,
-      label: `Pago de ${p.rentals?.tenants?.full_name ?? "arrendatario"} — ${p.rentals?.warehouses?.code ?? "?"}`,
-      detail: `${clp.format(p.amount)} · ${p.method === "manual" ? "manual" : "Webpay"}`,
-    })),
-    ...(recentLogs ?? []).map((l) => ({
-      type: l.success ? "sync-ok" : "sync-fail",
-      id: `log-${l.id}`,
-      createdAt: l.created_at,
-      label: `Sync ${l.rentals?.warehouses?.code ?? "?"} — ${l.action}`,
-      detail: l.success ? "OK" : "Falló",
-    })),
-  ]
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .slice(0, ACTIVITY_LIMIT);
 
   return (
     <div className="space-y-8">
@@ -328,48 +298,6 @@ export default async function AdminDashboardPage() {
             ]}
           />
         </div>
-      </div>
-
-      {/* Fila 5 — Actividad reciente */}
-      <div className="rounded-2xl border border-border bg-surface p-5">
-        <h2 className="mb-4 flex items-center gap-2 text-sm font-medium text-text-muted">
-          <Activity className="size-4" />
-          Actividad reciente
-        </h2>
-        {activity.length === 0 ? (
-          <p className="text-sm text-text-muted">Sin actividad todavía.</p>
-        ) : (
-          <ul className="space-y-1">
-            {activity.map((item) => {
-              const Icon =
-                item.type === "payment" ? ReceiptText : item.type === "sync-ok" ? KeyRound : ShieldAlert;
-              const iconClass =
-                item.type === "sync-fail" ? "text-danger" : item.type === "sync-ok" ? "text-ok" : "text-accent-2";
-              return (
-                <li key={item.id} className="flex items-center gap-3 py-1.5 text-sm">
-                  <Icon className={`size-4 shrink-0 ${iconClass}`} />
-                  <span className="flex-1 text-text">{item.label}</span>
-                  <span className="text-text-muted">{item.detail}</span>
-                  <span className="hidden text-xs text-text-muted sm:inline">
-                    {new Date(item.createdAt).toLocaleString("es-CL", {
-                      day: "2-digit",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        <Link
-          href="/admin/facturas"
-          className="mt-4 flex items-center gap-1.5 text-sm text-accent-2 hover:underline"
-        >
-          Ver todas las facturas
-          <ArrowRight className="size-3.5" />
-        </Link>
       </div>
     </div>
   );
