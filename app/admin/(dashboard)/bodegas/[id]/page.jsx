@@ -229,6 +229,8 @@ export default async function BodegaFichaPage({ params }) {
           <NewChargeForm warehouseId={warehouse.id} />
         </div>
         <p className="mb-3 text-xs text-text-muted">
+          Última lectura de medidor: <span className="font-mono text-text">{warehouse.last_meter_reading}</span>
+          {" · "}
           Link para cargar consumo en terreno:{" "}
           <Link href="/cargos/consumo" className="text-accent-2 underline hover:no-underline">
             bodega-facil-tamp1.vercel.app/cargos/consumo

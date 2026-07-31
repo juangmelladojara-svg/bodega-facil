@@ -6,7 +6,7 @@ import { Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 export default function CargaConsumoPage() {
   const [warehouses, setWarehouses] = useState([]);
   const [warehouseId, setWarehouseId] = useState("");
-  const [consumption, setConsumption] = useState("");
+  const [reading, setReading] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
@@ -20,6 +20,8 @@ export default function CargaConsumoPage() {
       });
   }, []);
 
+  const selectedWarehouse = warehouses.find((w) => w.id === warehouseId);
+
   async function handleSubmit(event) {
     event.preventDefault();
     setLoading(true);
@@ -30,15 +32,16 @@ export default function CargaConsumoPage() {
       const response = await fetch("/api/public/consumo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ warehouseId, consumption: Number(consumption) }),
+        body: JSON.stringify({ warehouseId, reading: Number(reading) }),
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.error ?? "No se pudo cargar el consumo.");
+        setError(data.error ?? "No se pudo cargar la lectura.");
         return;
       }
       setResult(data);
-      setConsumption("");
+      setWarehouses((prev) => prev.map((w) => (w.id === warehouseId ? { ...w, last_meter_reading: Number(reading) } : w)));
+      setReading("");
     } catch {
       setError("Error de conexión.");
     } finally {
@@ -64,7 +67,8 @@ export default function CargaConsumoPage() {
           Carga de consumo
         </h1>
         <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "1.75rem" }}>
-          Registra el consumo de la bodega. Se cobra a ${(300).toLocaleString("es-CL")} por unidad.
+          Ingresa la lectura acumulada del medidor (como luz o agua) — se cobra solo la
+          diferencia contra la última lectura, a ${(300).toLocaleString("es-CL")} por unidad.
         </p>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
@@ -95,14 +99,14 @@ export default function CargaConsumoPage() {
 
           <div>
             <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, marginBottom: "0.4rem" }}>
-              Consumo
+              Lectura del medidor
             </label>
             <input
               type="number"
-              min="0"
+              min={selectedWarehouse?.last_meter_reading ?? 0}
               step="0.01"
-              value={consumption}
-              onChange={(e) => setConsumption(e.target.value)}
+              value={reading}
+              onChange={(e) => setReading(e.target.value)}
               required
               placeholder="0"
               style={{
@@ -113,6 +117,11 @@ export default function CargaConsumoPage() {
                 fontSize: "0.95rem",
               }}
             />
+            {selectedWarehouse && (
+              <p style={{ color: "#888", fontSize: "0.8rem", marginTop: "0.4rem" }}>
+                Última lectura registrada: {selectedWarehouse.last_meter_reading}
+              </p>
+            )}
           </div>
 
           {error && (
@@ -124,7 +133,9 @@ export default function CargaConsumoPage() {
           {result && (
             <p style={{ color: "#1e8e3e", fontSize: "0.85rem", display: "flex", gap: "0.4rem", alignItems: "center" }}>
               <CheckCircle2 size={16} />
-              Cargado a {result.warehouseCode}: ${result.amount.toLocaleString("es-CL")}
+              {result.noCharge
+                ? `Lectura registrada en ${result.warehouseCode}: sin consumo nuevo.`
+                : `Cargado a ${result.warehouseCode}: ${result.delta} unidades nuevas — $${result.amount.toLocaleString("es-CL")}`}
             </p>
           )}
 

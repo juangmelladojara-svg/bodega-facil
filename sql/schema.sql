@@ -19,6 +19,7 @@ create table if not exists warehouses (
   gate_id       smallint not null check (gate_id in (1, 2)), -- patio físico (2 accesos)
   size_m3       numeric(8, 2),
   monthly_amount integer not null check (monthly_amount > 0), -- CLP, sin decimales
+  last_meter_reading numeric(10, 2) not null default 0, -- última lectura de consumo acumulada; el próximo cargo cobra el delta contra esto
   created_at    timestamptz not null default now()
 );
 
@@ -216,7 +217,8 @@ create table if not exists warehouse_charges (
   warehouse_id      uuid not null references warehouses(id) on delete restrict,
   charge_type       text not null default 'manual' check (charge_type in ('manual', 'consumo')),
   description       text not null,               -- ej. "Traslado flete a Temuco"
-  consumption       numeric(10, 2),               -- solo si charge_type = 'consumo'
+  consumption       numeric(10, 2),               -- solo si charge_type = 'consumo' — delta cobrado (no la lectura cruda)
+  meter_reading     numeric(10, 2),               -- solo si charge_type = 'consumo' — lectura acumulada del medidor en ese momento
   amount            integer not null check (amount > 0),
   status            text not null default 'pending' check (status in ('pending', 'confirmed', 'cancelled')),
   created_by        text,
