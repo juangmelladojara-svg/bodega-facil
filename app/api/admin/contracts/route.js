@@ -25,10 +25,17 @@ export async function POST(request) {
 
   if (error || !rental) return NextResponse.json({ error: "Arriendo no encontrado." }, { status: 404 });
 
+  const { data: company } = await supabase
+    .from("tenant_companies")
+    .select("*")
+    .eq("tenant_id", rental.tenant_id)
+    .maybeSingle();
+
   const content = generateContractContent({
     tenant: rental.tenants,
     warehouse: rental.warehouses,
     rental,
+    company,
   });
 
   const { data: contract, error: insertError } = await supabase

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { formatRut, isValidRut } from "@/lib/rut";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { computeFirstPaymentAmount } from "@/lib/computeValidUntil";
 
 /**
  * Endpoint público: dado un RUT válido devuelve nombre + bodegas + estado de
@@ -80,13 +81,19 @@ export async function POST(request) {
   const now = new Date();
   const items = (rentals ?? []).map((rental) => {
     const chargesTotal = chargesByWarehouse.get(rental.warehouse_id) ?? 0;
+    const isFirstPayment = !rental.valid_until;
+    const baseAmount = isFirstPayment
+      ? computeFirstPaymentAmount({ monthlyAmount: rental.monthly_amount })
+      : rental.monthly_amount;
     return {
       rentalId: rental.id,
       warehouseCode: rental.warehouses?.code ?? null,
       warehouseName: rental.warehouses?.name ?? null,
       monthlyAmount: rental.monthly_amount,
+      isFirstPayment,
+      baseAmount,
       chargesTotal,
-      totalDue: rental.monthly_amount + chargesTotal,
+      totalDue: baseAmount + chargesTotal,
       status: rental.status,
       validUntil: rental.valid_until,
       isUpToDate: Boolean(rental.valid_until && new Date(rental.valid_until) > now),

@@ -11,7 +11,7 @@ const clp = new Intl.NumberFormat("es-CL", {
 });
 
 /** Botón de "facturación manual" en la ficha de bodega: registra un pago (Webpay o efectivo/transferencia) directo para este arriendo. El monto sugerido incluye cargos confirmados aún no facturados. */
-export default function ManualBillingForm({ rentalId, defaultAmount, unbilledChargesTotal = 0 }) {
+export default function ManualBillingForm({ rentalId, defaultAmount, unbilledChargesTotal = 0, isFirstPayment = false }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -55,6 +55,11 @@ export default function ManualBillingForm({ rentalId, defaultAmount, unbilledCha
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-border bg-surface-2 p-4">
+      {isFirstPayment && (
+        <p className="text-xs text-text-muted">
+          Primer pago: incluye el proporcional del mes en curso + el mes siguiente completo.
+        </p>
+      )}
       {unbilledChargesTotal > 0 && (
         <p className="text-xs text-warn">
           Incluye {clp.format(unbilledChargesTotal)} en cargos pendientes de esta bodega.

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, FileText, Send, Upload, Download } from "lucide-react";
+import { Loader2, FileText, Send, Upload, Download, AlertTriangle, Clock } from "lucide-react";
 
 const STATUS_LABEL = {
   draft: "Borrador",
@@ -91,6 +91,11 @@ export default function ContractPanel({ rentalId, contract }) {
     );
   }
 
+  const deadlinePassed =
+    contract.status === "sent_for_signature" &&
+    contract.payment_deadline &&
+    new Date(contract.payment_deadline) < new Date();
+
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
@@ -101,6 +106,19 @@ export default function ContractPanel({ rentalId, contract }) {
           Generado {new Date(contract.created_at).toLocaleDateString("es-CL")}
         </span>
       </div>
+
+      {contract.status === "sent_for_signature" && contract.payment_deadline && (
+        <p
+          className={`mb-3 flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm ${
+            deadlinePassed ? "bg-danger/10 text-danger" : "bg-warn/10 text-warn"
+          }`}
+        >
+          {deadlinePassed ? <AlertTriangle className="size-4 shrink-0" /> : <Clock className="size-4 shrink-0" />}
+          {deadlinePassed
+            ? `Plazo de pago vencido (24h desde el envío, ${new Date(contract.payment_deadline).toLocaleString("es-CL")}). Revisa si el cliente pagó o libera la bodega desde "Terminar arriendo".`
+            : `Plazo de pago hasta ${new Date(contract.payment_deadline).toLocaleString("es-CL")}.`}
+        </p>
+      )}
 
       <pre className="mb-4 max-h-48 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-surface-2 p-3 font-mono text-xs text-text-muted">
         {contract.content}

@@ -28,15 +28,35 @@ comment on table warehouses is 'Bodegas físicas y su patio asociado (gate_id 1 
 -- tenants — arrendatarios
 -- ─────────────────────────────────────────────────────────────────────────
 create table if not exists tenants (
-  id          uuid primary key default gen_random_uuid(),
-  rut         text not null unique,             -- normalizado sin puntos, con guión
-  full_name   text not null,
-  phone       text,
-  email       text,
-  created_at  timestamptz not null default now()
+  id                  uuid primary key default gen_random_uuid(),
+  rut                 text not null unique,             -- normalizado sin puntos, con guión
+  full_name           text not null,
+  phone               text,                             -- WhatsApp de contacto (ahí llegan avisos)
+  email               text,
+  reference_address   text,                             -- dirección de referencia entregada al tomar la bodega
+  id_photo_front_path text,                              -- ruta en el bucket privado "tenant-documents"
+  id_photo_back_path  text,
+  created_at          timestamptz not null default now()
 );
 
 comment on table tenants is 'Arrendatarios identificados por RUT.';
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- tenant_companies — datos de empresa, 1-a-1 opcional con tenants
+-- ─────────────────────────────────────────────────────────────────────────
+create table if not exists tenant_companies (
+  tenant_id       uuid primary key references tenants(id) on delete cascade,
+  company_rut     text not null,
+  razon_social    text not null,
+  giro            text,
+  company_address text,
+  legal_rep_rut   text not null,
+  legal_rep_name  text not null,
+  company_email   text,
+  created_at      timestamptz not null default now()
+);
+
+comment on table tenant_companies is 'Datos de empresa cuando el arrendatario arrienda a nombre de una empresa (rut, razón social, giro, representante legal).';
 
 -- ─────────────────────────────────────────────────────────────────────────
 -- rentals — relación arrendatario ↔ bodega ↔ tarjeta física
@@ -52,6 +72,7 @@ create table if not exists rentals (
                           check (status in ('inactive', 'active', 'overdue', 'suspended', 'ended')),
   valid_until           timestamptz,            -- vigencia actual de la tarjeta en el controlador
   ended_at              timestamptz,            -- cuándo se terminó el arriendo (liberó la bodega); null mientras está vigente
+  rental_term           text not null default 'mensual' check (rental_term in ('mensual', 'diario')),
   created_at            timestamptz not null default now(),
   updated_at            timestamptz not null default now()
 );
@@ -231,6 +252,8 @@ create table if not exists contracts (
   esignature_envelope_id  text,                    -- id externo del proveedor real, cuando exista
   signed_pdf_path         text,                    -- path en Supabase Storage (bucket "contracts")
   signed_at               timestamptz,
+  sent_at                 timestamptz,             -- cuándo se marcó "enviado a firma"
+  payment_deadline        timestamptz,             -- sent_at + 24h; informativo, no cancela nada automáticamente
   created_by              text,
   created_at              timestamptz not null default now(),
   updated_at              timestamptz not null default now()

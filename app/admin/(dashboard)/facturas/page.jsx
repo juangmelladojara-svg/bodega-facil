@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { computeFirstPaymentAmount } from "@/lib/computeValidUntil";
 import RegisterManualPaymentForm from "./RegisterManualPaymentForm";
 import { InvoiceActions, GenerateInvoiceButton } from "./InvoiceActions";
 
@@ -105,10 +106,15 @@ export default async function FacturasPage({ searchParams }) {
   } catch {
     chargesByWarehouseId = new Map();
   }
-  const rentalsWithCharges = (rentals ?? []).map((r) => ({
-    ...r,
-    chargesTotal: chargesByWarehouseId.get(r.warehouse_id) ?? 0,
-  }));
+  const rentalsWithCharges = (rentals ?? []).map((r) => {
+    const isFirstPayment = !r.valid_until;
+    return {
+      ...r,
+      chargesTotal: chargesByWarehouseId.get(r.warehouse_id) ?? 0,
+      isFirstPayment,
+      baseAmount: isFirstPayment ? computeFirstPaymentAmount({ monthlyAmount: r.monthly_amount }) : r.monthly_amount,
+    };
+  });
 
   const visiblePayments = (monthPayments ?? []).filter((p) => {
     if (filter === "todas" || filter === "vencidas") return filter !== "vencidas";

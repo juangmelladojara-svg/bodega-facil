@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, AlertTriangle, Ban } from "lucide-react";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { computeFirstPaymentAmount } from "@/lib/computeValidUntil";
 import ContractPanel from "./ContractPanel";
 import NewChargeForm from "./NewChargeForm";
 import ManualBillingForm from "./ManualBillingForm";
@@ -35,11 +36,14 @@ export default async function BodegaFichaPage({ params }) {
     .neq("status", "ended")
     .maybeSingle();
 
-  const [{ data: payments }, { data: charges }] = await Promise.all([
+  const [{ data: payments }, { data: charges }, { data: tenantCompany }] = await Promise.all([
     rental
       ? supabase.from("payments").select("*").eq("rental_id", rental.id).order("created_at", { ascending: false }).limit(10)
       : Promise.resolve({ data: [] }),
     supabase.from("warehouse_charges").select("*").eq("warehouse_id", id).order("created_at", { ascending: false }),
+    rental
+      ? supabase.from("tenant_companies").select("*").eq("tenant_id", rental.tenant_id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   // Defensivo: contracts/invoices pueden no existir todavía si la migración no corrió.
@@ -73,6 +77,12 @@ export default async function BodegaFichaPage({ params }) {
 
   const badge = rental ? STATUS_BADGE[rental.status] ?? STATUS_BADGE.inactive : null;
   const BadgeIcon = badge?.icon;
+  const isFirstPayment = rental ? !rental.valid_until : false;
+  const suggestedAmount = rental
+    ? isFirstPayment
+      ? computeFirstPaymentAmount({ monthlyAmount: rental.monthly_amount })
+      : rental.monthly_amount
+    : 0;
   const unbilledChargesTotal = (charges ?? [])
     .filter((c) => c.status === "confirmed" && !c.payment_id)
     .reduce((sum, c) => sum + c.amount, 0);
@@ -139,12 +149,69 @@ export default async function BodegaFichaPage({ params }) {
                   {rental.card_uid ?? "sin UID"} · {rental.controller_person_id ?? "sin enrolar"}
                 </p>
               </div>
+              <div>
+                <p className="text-xs text-text-muted">Contacto</p>
+                <p className="text-text">{rental.tenants?.phone ?? "—"} · {rental.tenants?.email ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-text-muted">Dirección de referencia</p>
+                <p className="text-text">{rental.tenants?.reference_address ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-text-muted">Plazo</p>
+                <p className="text-text">{rental.rental_term === "diario" ? "Diario" : "Mensual (mín. 3 meses)"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-text-muted">Cédula</p>
+                <p className="flex gap-2 text-sm">
+                  {rental.tenants?.id_photo_front_path ? (
+                    <a
+                      href={`/api/admin/tenants/${rental.tenants.id}/id-photo?side=front`}
+                      target="_blank"
+                      rel="noopener"
+                      className="text-accent-2 underline hover:no-underline"
+                    >
+                      Anverso
+                    </a>
+                  ) : (
+                    <span className="text-text-muted">Sin anverso</span>
+                  )}
+                  {rental.tenants?.id_photo_back_path ? (
+                    <a
+                      href={`/api/admin/tenants/${rental.tenants.id}/id-photo?side=back`}
+                      target="_blank"
+                      rel="noopener"
+                      className="text-accent-2 underline hover:no-underline"
+                    >
+                      Reverso
+                    </a>
+                  ) : (
+                    <span className="text-text-muted">Sin reverso</span>
+                  )}
+                </p>
+              </div>
             </div>
+
+            {tenantCompany && (
+              <div className="rounded-lg border border-border bg-surface-2 p-3">
+                <p className="mb-2 text-xs font-medium text-text-muted">Empresa</p>
+                <div className="grid gap-2 text-sm sm:grid-cols-2">
+                  <p className="text-text">{tenantCompany.razon_social} — {tenantCompany.company_rut}</p>
+                  <p className="text-text-muted">{tenantCompany.giro ?? "—"}</p>
+                  <p className="text-text-muted sm:col-span-2">{tenantCompany.company_address ?? "—"}</p>
+                  <p className="text-text-muted sm:col-span-2">
+                    Representante: {tenantCompany.legal_rep_name} — {tenantCompany.legal_rep_rut}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-2">
               <ManualBillingForm
                 rentalId={rental.id}
-                defaultAmount={rental.monthly_amount}
+                defaultAmount={suggestedAmount}
                 unbilledChargesTotal={unbilledChargesTotal}
+                isFirstPayment={isFirstPayment}
               />
               <EndRentalButton rentalId={rental.id} />
             </div>

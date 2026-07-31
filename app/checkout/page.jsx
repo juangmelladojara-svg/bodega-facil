@@ -160,6 +160,11 @@ export default function CheckoutPage() {
                           {rental.warehouseName ?? rental.warehouseCode}
                         </p>
                         <p className="text-sm text-text-muted">{clp.format(rental.monthlyAmount)} / mes</p>
+                        {rental.isFirstPayment && (
+                          <p className="text-xs text-text-muted">
+                            Primer pago: proporcional del mes + mes siguiente completo
+                          </p>
+                        )}
                         {rental.chargesTotal > 0 && (
                           <p className="text-xs text-warn">
                             + {clp.format(rental.chargesTotal)} en cargos pendientes
@@ -170,7 +175,7 @@ export default function CheckoutPage() {
                     <StatusBadge isUpToDate={rental.isUpToDate} validUntil={rental.validUntil} />
                   </div>
 
-                  {rental.chargesTotal > 0 && (
+                  {(rental.isFirstPayment || rental.chargesTotal > 0) && (
                     <p className="mt-3 rounded-lg bg-surface px-3 py-2 text-sm text-text">
                       Total a pagar: <span className="font-semibold">{clp.format(rental.totalDue)}</span>
                     </p>

@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { createWebpayTransaction } from "@/lib/transbank";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { getUnbilledCharges, reserveChargesForPayment } from "@/lib/charges";
+import { computeFirstPaymentAmount } from "@/lib/computeValidUntil";
 
 export async function POST(request) {
   const clientIp = getClientIp(request);
@@ -56,7 +57,14 @@ export async function POST(request) {
     26
   );
   const sessionId = randomUUID().replace(/-/g, "").slice(0, 26);
-  const amount = rental.monthly_amount + chargesTotal;
+  // Primer pago del arriendo: proporcional del mes en curso + el mes
+  // siguiente completo (ver lib/computeValidUntil.js). Desde el segundo
+  // pago en adelante, mensualidad plana.
+  const isFirstPayment = !rental.valid_until;
+  const baseAmount = isFirstPayment
+    ? computeFirstPaymentAmount({ monthlyAmount: rental.monthly_amount })
+    : rental.monthly_amount;
+  const amount = baseAmount + chargesTotal;
 
   let webpayResponse;
   try {
@@ -82,7 +90,13 @@ export async function POST(request) {
       session_id: sessionId,
       amount,
       status: "pending",
-      notes: chargesTotal > 0 ? `Incluye ${clpFormat(chargesTotal)} en cargos adicionales.` : null,
+      notes:
+        [
+          isFirstPayment ? "Primer pago: proporcional del mes + mes siguiente." : null,
+          chargesTotal > 0 ? `Incluye ${clpFormat(chargesTotal)} en cargos adicionales.` : null,
+        ]
+          .filter(Boolean)
+          .join(" ") || null,
     })
     .select()
     .single();
@@ -100,6 +114,8 @@ export async function POST(request) {
     token: webpayResponse.token,
     amount,
     chargesTotal,
+    isFirstPayment,
+    baseAmount,
   });
 }
 
