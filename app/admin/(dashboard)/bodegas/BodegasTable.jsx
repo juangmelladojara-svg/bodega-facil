@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowUp, ArrowDown, ArrowUpDown, Search } from "lucide-react";
-import { isOccupied } from "@/lib/warehouses";
+import { getOccupancyStatus } from "@/lib/warehouses";
 
 const clp = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -22,12 +22,20 @@ const COLUMNS = [
 
 const STATUS_FILTERS = [
   { key: "all", label: "Todas" },
-  { key: "occupied", label: "Ocupada" },
-  { key: "free", label: "Libre" },
+  { key: "ocupada", label: "Ocupada" },
+  { key: "firma", label: "En proceso de firma" },
+  { key: "libre", label: "Libre" },
 ];
 
+const STATUS_ORDER = { libre: 0, firma: 1, ocupada: 2 };
+const STATUS_BADGE = {
+  libre: { text: "Libre", className: "bg-emerald-500/15 text-emerald-600" },
+  firma: { text: "En proceso de firma", className: "bg-danger/15 text-danger" },
+  ocupada: { text: "Ocupada", className: "bg-accent-2/15 text-accent-2" },
+};
+
 function sortValue(warehouse, key) {
-  if (key === "occupied") return warehouse.occupied ? 1 : 0;
+  if (key === "occupied") return STATUS_ORDER[warehouse.occupancyStatus] ?? 0;
   const value = warehouse[key];
   if (value == null) return key === "size_m3" ? -Infinity : "";
   return value;
@@ -43,7 +51,7 @@ export default function BodegasTable({ warehouses }) {
     () =>
       warehouses.map((w) => ({
         ...w,
-        occupied: isOccupied(w),
+        occupancyStatus: getOccupancyStatus(w),
       })),
     [warehouses]
   );
@@ -60,8 +68,7 @@ export default function BodegasTable({ warehouses }) {
   const visibleRows = useMemo(() => {
     const query = search.trim().toLowerCase();
     let filtered = rows.filter((w) => {
-      if (statusFilter === "occupied" && !w.occupied) return false;
-      if (statusFilter === "free" && w.occupied) return false;
+      if (statusFilter !== "all" && w.occupancyStatus !== statusFilter) return false;
       if (!query) return true;
       return (
         w.code?.toLowerCase().includes(query) ||
@@ -154,13 +161,9 @@ export default function BodegasTable({ warehouses }) {
                 <td className="px-4 py-3 text-text-muted">{clp.format(warehouse.monthly_amount)}</td>
                 <td className="px-4 py-3">
                   <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                      warehouse.occupied
-                        ? "bg-accent-2/15 text-accent-2"
-                        : "bg-emerald-500/15 text-emerald-600"
-                    }`}
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_BADGE[warehouse.occupancyStatus].className}`}
                   >
-                    {warehouse.occupied ? "Ocupada" : "Libre"}
+                    {STATUS_BADGE[warehouse.occupancyStatus].text}
                   </span>
                 </td>
               </tr>
